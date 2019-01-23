@@ -1,0 +1,33 @@
+{
+    "studentAttributes": {
+        "Roster Name": {"onePerStudent": true},
+        "Email": {},
+        "Student ID": {"identifiesStudent": true, "onePerStudent": true, "filters": ["strip", "9char", "toUpper"]},
+        "Clicker ID": {"identifiesStudent": true, "filters": ["strip", "remove#", "8char", "toUpper"]}
+    },
+    "sources": {
+        "data/CSE105Wi19Roster - 1.19.19.csv": {
+            "type": "UCSD Roster",
+            "attributes": {
+                "Email": "Email",
+                "PID": "Student ID",
+                "Student": "Roster Name"
+            },
+            "items": []
+        },
+        "data/Clicker registration (Responses) - Form Responses 1.csv": {
+            "attributes": {
+                "Email Address": "Email",
+                "PID": "Student ID",
+                "Enter your remote ID, preceded by a hashtag symbol (#)": "Clicker ID"
+            },
+            "items": []
+        }
+    },
+    "outputs": {
+        "report-name": "CSE105 Preliminary Grade Report",
+        "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
+        "content": [
+        ]
+    }
+}

@@ -1,0 +1,64 @@
+{
+    "studentAttributes": {
+        "Roster Name": {"onePerStudent": true},
+        "Email": {},
+        "Student ID": {"identifiesStudent": true, "onePerStudent": true, "filters": ["strip", "9char", "toUpper"]},
+        "Clicker ID": {"identifiesStudent": true, "filters": ["strip", "remove#", "8char", "toUpper"]}
+    },
+    "sources": {
+        "data/Roster.csv": {
+            "type": "UCSD Roster",
+            "attributes": {
+                "Email": "Email",
+                "PID": "Student ID",
+                "Student": "Roster Name"
+            },
+            "items": []
+        },
+        "data/CSE20_Fall_2018_grades.csv": {
+            "attributes": {
+                "SID": "Student ID",
+                "Email": "Email"
+            },
+            "items": [
+                {"name": "HW-1", "match": "HW 1", "max_points": 32, "type": "homework", "flags": "BlankTo0"},
+                {"name": "HW-5", "match": "HW 5", "max_points": 38, "type": "homework", "flags": "BlankTo0"}
+            ]
+        },
+        "data/clickerRegistrations.csv": {
+            "attributes": {
+                "Email Address": "Email",
+                "Your PID": "Student ID",
+                "Your iclicker ID": "Clicker ID"
+            },
+            "items": []
+        },
+        "data/inClassClickersFinalBC_renamedCols.csv": {
+            "attributes": {
+                "Remote ID": "Clicker ID"
+            },
+            "items": [
+                {"name": "12/7", "match": "12/7/18", "max_points": 1, "type": "in-class-participation", "flags": "NVto0"},
+                {"name": "11/30", "match": "11/30/18", "max_points": 1, "type": "in-class-participation", "flags": "NVto0"}
+            ]
+        },
+        "data/Week1ReviewQuiz.csv": {
+            "attributes": {
+                "Email Address": "Email",
+                "PID": "Student ID"
+            },
+            "items": [
+                {"name": "Week1", "match": "Score", "max_points": 4, "type": "review-quiz", "flags": "stripDenominator", "due_date": "10/04/2018 11:59:59 PM PDT"}
+            ]
+        }
+    },
+    "outputs": {
+        "report-name": "CSE105 Preliminary Grade Report",
+        "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
+        "content": [
+            { "title": "Homework", "from": "homework" },
+            { "title": "In-class Participation", "from": "in-class-participation" },
+            { "title": "Review Quizzes", "from": "review-quiz" }
+        ]
+    }
+}
