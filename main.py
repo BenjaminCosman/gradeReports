@@ -1,7 +1,8 @@
 import sys, os, csv, json
 import pdfkit
+import argparse
 
-CONFIG_FILENAME = 'config.json'
+DEFAULT_CONFIG_FILENAME = 'config.json'
 
 GRADES_KEY = 'Grades'
 INFO_KEY = 'Info'
@@ -178,8 +179,8 @@ def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
                 html_str += f"{prefix} {ogscore} </p>"
     return html_str
 
-def main():
-    with open(CONFIG_FILENAME) as configFile:
+def main(configFilename):
+    with open(args.filename) as configFile:
         globalConfigObj = json.load(configFile)
 
     studentAttrDict = globalConfigObj["studentAttributes"]
@@ -214,4 +215,8 @@ def main():
         printReport(k, v, allAssignments, globalConfigObj["outputs"])
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename', metavar='FILENAME', type=str, nargs='?',
+                        help='some help', default=DEFAULT_CONFIG_FILENAME)
+    args = parser.parse_args()
+    main(args.filename)
