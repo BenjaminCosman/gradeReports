@@ -2,6 +2,8 @@
 
 ## Installation
 
+### Install dependencies
+
 `pip install pdfkit`
 
 ## Configuration
