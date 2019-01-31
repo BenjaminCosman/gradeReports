@@ -1,6 +1,7 @@
 {
     "studentAttributes": {
         "Roster Name": {"onePerStudent": true},
+        "Section": {"onePerStudent": true},
         "Email": {},
         "Student ID": {"identifiesStudent": true, "onePerStudent": true, "filters": ["strip", "9char", "toUpper"]},
         "Clicker ID": {"identifiesStudent": true, "filters": ["strip", "remove#", "8char", "toUpper"]}

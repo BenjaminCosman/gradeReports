@@ -41,7 +41,7 @@ def peek_line(f):
     return line
 
 def getRows(sourceFileName, sourceType):
-    with open(sourceFileName) as source:
+    with open(os.fsencode(sourceFileName)) as source:
         if sourceType == "UCSD Roster":
             while peek_line(source) != "Sec ID,PID,Student,Credits,College,Major,Level,Email\n":
                 source.readline()
@@ -62,14 +62,19 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
                 studentInfo[internalName] = checkAndClean(identVal, studentAttrDict[internalName]['filters'])
             grades = {}
             for assignment in sourceConfigReader:
-                score = record[assignment['scoreCol']]
-                score = float(checkAndClean(score, assignment['filters']))
-                if "due_date" in assignment:
-                    #TODO: think about how to handle multiple submissions by same student
-                    dueDate = dateutil.parser.parse(assignment['due_date'])
-                    turninDate = dateutil.parser.parse(record[assignment['timestampCol']])
-                    if turninDate > dueDate:
-                        score = 0
+                scoreCol = assignment['scoreCol']
+                # Check for special value denoting scored-for-completion
+                if scoreCol == False:
+                    score = assignment['max_points']
+                else:
+                    score = record[scoreCol]
+                    score = float(checkAndClean(score, assignment['filters']))
+                    if "due_date" in assignment:
+                        #TODO: correctly handle multiple submissions by same student
+                        dueDate = dateutil.parser.parse(assignment['due_date'])
+                        turninDate = dateutil.parser.parse(record[assignment['timestampCol']])
+                        if turninDate > dueDate:
+                            score = 0
                 grades[assignment[ASSIGNMENT_NAME_KEY]] = score
             outputList.append((studentInfo, grades))
         except IncorrectLengthException:
@@ -217,7 +222,7 @@ def main(configFilename):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('filename', metavar='CONFIG_FILE', type=str, nargs='?',
+    parser.add_argument('filename', metavar='CONFIG_FILE', type=str, #nargs='?',
         help='The .json file describing your class. Default: `config.json`',
         default=DEFAULT_CONFIG_FILENAME)
     args = parser.parse_args()

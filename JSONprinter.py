@@ -18,6 +18,7 @@ class NoIndentEncoder(json.JSONEncoder):
         if isinstance(o, NoIndent):
             key = uuid.uuid4().hex
             s = str(o.value)
+            # s = '{%s}' % ', '.join(['"%s": %s' % (k, myStr(v)) for k, v in o.value.items()])
             self._replacement_map[key] = s
             # self._replacement_map[key] = json.dumps(o.value, **self.kwargs)
             return "@@%s@@" % (key,)

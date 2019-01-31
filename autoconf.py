@@ -1,8 +1,8 @@
-import json, os, csv, re
-from JSONprinter import NoIndentEncoder, NoIndent
+import json, os, csv, re, argparse
+# from JSONprinter import NoIndentEncoder, NoIndent
 
-CONFIG_FILENAME = 'config.json'
-DATA_DIR = 'data'
+# CONFIG_FILENAME = 'config.json'
+DEFAULT_DATA_DIR = 'data'
 OUTFILE = 'tempConfig.json'
 
 keywords = {
@@ -58,6 +58,18 @@ def guessConfig(globalConfigObj, filename, fileType):
         if len(set(reader.fieldnames)) != len(reader.fieldnames):
             print(f"WARNING: duplicate column in {filename}")
 
+        if fileType == "roster":
+            globalConfigObj["sources"][filename] = {
+                "type": "UCSD Roster",
+                "attributes": {
+                    "Email": "Email",
+                    "PID": "Student ID",
+                    "Student": "Roster Name"
+                },
+                "items": []
+            }
+            return
+
         if fileType in ["other", "scoredGoogleForm", "unscoredGoogleForm"]:
             for item in reader.fieldnames:
                 itemLowered = item.lower()
@@ -88,59 +100,75 @@ def guessConfig(globalConfigObj, filename, fileType):
                         itemType = "unknown"
                         if "hw" in item or "assignment" in item or "homework" in item:
                             itemType = "homework"
-                        itemConfig.append({"name": item, "match": item, "max_points": 1, "type": itemType})
+                        itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType})
 
         if fileType == "scoredGoogleForm":
             row = reader.__next__()
             score = row['Score']
             maxPoints = int(score.split('/')[1].strip())
             name = os.path.splitext(os.path.basename(filename))[0]
-            itemConfig.append({"name": name, "match": "Score", "max_points": maxPoints, "type": "scoredGoogleForm", "filters": ["stripDenominator"], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
+            itemConfig.append({"name": name, "scoreCol": "Score", "max_points": maxPoints, "type": fileType, "filters": ["stripDenominator"], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
+
+        if fileType == "unscoredGoogleForm":
+            name = os.path.splitext(os.path.basename(filename))[0]
+            itemConfig.append({"name": name, "scoreCol": False, "max_points": 1, "type": fileType, "filters": [], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
+
 
     globalConfigObj["sources"][filename] = {
         "_autoconf_fileType": fileType,
         "attributes": attrConfig,
-        "items": [NoIndent(x) for x in itemConfig],
+        "items": itemConfig, #[NoIndent(x) for x in itemConfig],
         "_autoconf_ignoredCols": ignoredCols
     }
 
-def main():
-    if False:#os.path.exists(CONFIG_FILENAME):
-        with open(CONFIG_FILENAME) as configFile:
-            globalConfigObj = json.load(configFile)
-    else:
-        globalConfigObj = {
-            "studentAttributes": {
-                "Roster Name": {"onePerStudent": True},
-                "Section": {"onePerStudent": True},
-                "Email": {},
-                "Student ID": {"identifiesStudent": True, "onePerStudent": True, "filters": ["strip", "9char", "toUpper"]},
-                "Clicker ID": {"identifiesStudent": True, "filters": ["strip", "remove#", "8char", "toUpper"]}
-            },
-            "sources": {},
-            "outputs": {
-                "report-name": "CSEnn Grade Report",
-                "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
-                "content": []
-            }
+def main(dataDir):
+    # if os.path.exists(CONFIG_FILENAME):
+    #     with open(CONFIG_FILENAME) as configFile:
+    #         globalConfigObj = json.load(configFile)
+    # else:
+    globalConfigObj = {
+        "studentAttributes": {
+            "Roster Name": {"onePerStudent": True},
+            "Section": {"onePerStudent": True},
+            "Email": {},
+            "Student ID": {"identifiesStudent": True, "onePerStudent": True, "filters": ["strip", "9char", "toUpper"]},
+            "Clicker ID": {"identifiesStudent": True, "filters": ["strip", "remove#", "8char", "toUpper"]}
+        },
+        "sources": {},
+        "outputs": {
+            "report-name": "CSEnn Grade Report",
+            "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
+            "content": []
         }
+    }
 
     # newGlobalConfigObj = copy.deepcopy(globalConfigObj)
 
-    print("Searching `%s` for new files..." % DATA_DIR)
-    for filename in os.listdir(DATA_DIR):
-        fullname = os.path.join(DATA_DIR, filename)
-        if fullname not in globalConfigObj["sources"]:
-            print("Found new file `%s`" % filename)
-            fileType = inferType(fullname)
-            print("Inferred file type: %s" % fileType)
-            guessConfig(globalConfigObj, fullname, fileType)
+    print("Searching `%s` for csv files..." % dataDir)
+    for filename in os.listdir(dataDir):
+        fullname = os.path.join(dataDir, filename)
+        # if fullname not in globalConfigObj["sources"]:
+        print("Found file `%s`" % filename)
+        fileType = inferType(fullname)
+        print("Inferred file type: %s" % fileType)
+        guessConfig(globalConfigObj, fullname, fileType)
+
+    categories = []
+    for (_, sourceData) in globalConfigObj['sources'].items():
+        for item in sourceData['items']:
+            categories.append(item['type'])
+    globalConfigObj['outputs']['content'] = [{ "title": c, "from": c} for c in categories]
 
     with open(OUTFILE, 'w') as outFile:
-        s = json.dumps(globalConfigObj, cls=NoIndentEncoder, indent=2, separators=(',', ': '))
-        print(s)
+        s = json.dumps(globalConfigObj, indent=2, separators=(',', ': ')) # cls=NoIndentEncoder,
+        # print(s)
         outFile.write(s)
         # json.dump(globalConfigObj, outFile, cls=NoIndentEncoder, indent=2, separators=(',', ': '))
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('sourcesDir', metavar='SOURCES_DIR', type=str, #nargs='?',
+        help='The folder containing your roster, grades, etc. Default: `data`',
+        default=DEFAULT_DATA_DIR)
+    args = parser.parse_args()
+    main(args.sourcesDir)
