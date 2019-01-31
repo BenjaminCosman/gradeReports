@@ -6,10 +6,12 @@
         "Student ID": {"identifiesStudent": true, "onePerStudent": true, "filters": ["strip", "9char", "toUpper"]},
         "Clicker ID": {"identifiesStudent": true, "filters": ["strip", "remove#", "8char", "toUpper"]}
     },
-    "sources": {
-        "data/CSE105Wi19Roster.xlsx": {
+    "sources": [
+        {
+            "file": "data/CSE105Wi19Roster.xlsx",
             "isRoster": true,
             "sheetName": "1.11.19",
+
             "attributes": {
                 "Email": "Email",
                 "PID": "Student ID",
@@ -17,15 +19,19 @@
             },
             "items": []
         },
-        "data/Clicker registration (Responses).xlsx": {
+        {
+            "file": "data/Clicker registration (Responses).xlsx",
             "sheetName": "Form Responses 1",
+
             "attributes": {
                 "PID": "Student ID",
                 "Enter your remote ID, preceded by a hashtag symbol (#)": "Clicker ID"
             },
             "items": []
         },
-        "data/QuizResponsesCSE105Wi19.xlsx": {
+        {
+            "file": "data/QuizResponsesCSE105Wi19.xlsx",
+
             "attributes": {
                 "PID": "Student ID"
             },
@@ -36,8 +42,10 @@
                 {"name": "Week4", "sheetName": "Week4-due2.3", "scoreCol": "Score", "max_points": 4, "type": "review-quiz", "filters": ["stripDenominator"], "due_date": "2/3/2019 23:59:59", "timestampCol": "Timestamp"}
             ]
         },
-        "data/Pre-Survey Winter 2019 (Responses).xlsx": {
+        {
+            "file": "data/Pre-Survey Winter 2019 (Responses).xlsx",
             "sheetName": "Form Responses 1",
+
             "attributes": {
                 "Enter your PID, starting with upper case A (for your credit)": "Student ID"
             },
@@ -45,8 +53,10 @@
                 {"name": "Pre-survey", "scoreCol": false, "max_points": 1, "type": "surveys", "filters": [], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"}
             ]
         },
-        "data/CSE 105 Winter 2019 Discussion attendance.xlsx": {
+        {
+            "file": "data/CSE 105 Winter 2019 Discussion attendance.xlsx",
             "sheetName": "attendance",
+
             "attributes": {
                 "PID": "Student ID"
             },
@@ -56,7 +66,7 @@
                 {"name": "Week 3", "scoreCol": "Week 3", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]}
             ]
         }
-    },
+    ],
     "outputs": {
         "report-name": "CSE105 Preliminary Grade Report",
         "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",

@@ -139,7 +139,7 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj)
         for (assignmentName, assignmentData) in allAssignments.items():
             if assignmentData['type'] == obj["from"]:
                 score = studentData[GRADES_KEY].get(assignmentName, None)
-                print(f"{assignmentName}\t{score}/{assignmentData['max_points']}")
+                print(f"\t{assignmentName}\t{score}/{assignmentData['max_points']}")
     print('--------------------------\n')
 
     # Print html report to file
@@ -196,14 +196,15 @@ def main(configFilename):
     primaryAttr = findPrimaryAttr(studentAttrDict)
     roster = {k:{} for k in studentAttrDict}
 
-    sourceConfigObj = globalConfigObj["sources"]
+    sourceConfigList = globalConfigObj["sources"]
     allAssignments = {}
-    for obj in sourceConfigObj.values():
+    for obj in sourceConfigList:
         for assignmentData in obj["items"]:
             allAssignments[assignmentData["name"]] = assignmentData
 
-    for sourceFilename in sourceConfigObj:
-        data = sourceToGrades(sourceFilename, sourceConfigObj[sourceFilename], studentAttrDict)
+    for obj in sourceConfigList:
+        sourceFilename = obj['file']
+        data = sourceToGrades(sourceFilename, obj, studentAttrDict)
         for (studentInfo, grades) in data:
             try:
                 studentID = getStudentID(studentAttrDict, primaryAttr, roster, studentInfo)
