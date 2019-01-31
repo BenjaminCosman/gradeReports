@@ -1,9 +1,13 @@
-import json, os, csv, re, argparse
+import json, os, csv, re, argparse, glob
+from enum import Enum
+# import openpyxl
 # from JSONprinter import NoIndentEncoder, NoIndent
 
 # CONFIG_FILENAME = 'config.json'
 DEFAULT_DATA_DIR = 'data'
 OUTFILE = 'tempConfig.json'
+
+FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM OTHER IGNORED')
 
 keywords = {
     "Roster Name": [r'name\b'],
@@ -21,27 +25,27 @@ keywords = {
 def inferType(fullname):
     (_, ext) = os.path.splitext(fullname)
     if ext != ".csv":
-        return "unknown"
+        return FileType.IGNORED
     with open(fullname) as f:
         reader = csv.DictReader(f)
         fields = reader.fieldnames
 
-        if fields[:4] == ['Sect ID', 'Course', 'Title', 'SecCode']:
-            return "roster"
+        if fields[:5] == ['Sect ID', 'Course', 'Title', 'SecCode', 'Instructor']:
+            return FileType.ROSTER
 
         lastCol = ""
         for col in fields:
             if col == lastCol + " - Max Points":
-                return "gradescope"
+                return FileType.GRADESCOPE
             lastCol = col
 
         if fields[0] == 'Timestamp':
             if 'Score' in fields:
-                return "scoredGoogleForm"
+                return FileType.SCORED_GOOGLE_FORM
             else:
-                return "unscoredGoogleForm"
+                return FileType.UNSCORED_GOOGLE_FORM
 
-        return "other"
+        return FileType.OTHER
 
 def guessConfig(globalConfigObj, filename, fileType):
     attrConfig = {}
@@ -58,7 +62,7 @@ def guessConfig(globalConfigObj, filename, fileType):
 
         # The UCSD roster is not a proper csv (more like 2 on top of each other)
         # it gets special treatment here
-        if fileType == "roster":
+        if fileType == FileType.ROSTER:
             globalConfigObj["sources"][filename] = {
                 "type": "UCSD Roster",
                 "attributes": {
@@ -73,7 +77,7 @@ def guessConfig(globalConfigObj, filename, fileType):
         if len(set(reader.fieldnames)) != len(reader.fieldnames):
             print(f"WARNING: duplicate column in {filename}")
 
-        if fileType in ["other", "scoredGoogleForm", "unscoredGoogleForm"]:
+        if fileType in [FileType.OTHER, FileType.SCORED_GOOGLE_FORM, FileType.UNSCORED_GOOGLE_FORM]:
             for item in reader.fieldnames:
                 itemLowered = item.lower()
 
@@ -99,26 +103,26 @@ def guessConfig(globalConfigObj, filename, fileType):
                         ignoredCols.append(item)
                 # Otherwise, assume it's an assignment grade (for 'other' filetypes only)
                 else:
-                    if fileType == "other":
+                    if fileType == FileType.OTHER:
                         itemType = "unknown"
                         if "hw" in item or "assignment" in item or "homework" in item:
                             itemType = "homework"
                         itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType})
 
-        if fileType == "scoredGoogleForm":
+        if fileType == FileType.SCORED_GOOGLE_FORM:
             row = reader.__next__()
             score = row['Score']
             maxPoints = int(score.split('/')[1].strip())
             name = os.path.splitext(os.path.basename(filename))[0]
-            itemConfig.append({"name": name, "scoreCol": "Score", "max_points": maxPoints, "type": fileType, "filters": ["stripDenominator"], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
+            itemConfig.append({"name": name, "scoreCol": "Score", "max_points": maxPoints, "type": fileType.name, "filters": ["stripDenominator"], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
-        if fileType == "unscoredGoogleForm":
+        if fileType == FileType.UNSCORED_GOOGLE_FORM:
             name = os.path.splitext(os.path.basename(filename))[0]
-            itemConfig.append({"name": name, "scoreCol": False, "max_points": 1, "type": fileType, "filters": [], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
+            itemConfig.append({"name": name, "scoreCol": False, "max_points": 1, "type": fileType.name, "filters": [], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
 
     globalConfigObj["sources"][filename] = {
-        "_autoconf_fileType": fileType,
+        "_autoconf_fileType": fileType.name,
         "attributes": attrConfig,
         "items": itemConfig, #[NoIndent(x) for x in itemConfig],
         "_autoconf_ignoredCols": ignoredCols
@@ -148,13 +152,12 @@ def main(dataDir):
     # newGlobalConfigObj = copy.deepcopy(globalConfigObj)
 
     print("Searching `%s` for csv files..." % dataDir)
-    for filename in os.listdir(dataDir):
-        fullname = os.path.join(dataDir, filename)
-        # if fullname not in globalConfigObj["sources"]:
+    for filename in glob.iglob(os.path.join(dataDir,'**'), recursive=True):
         print("Found file `%s`" % filename)
-        fileType = inferType(fullname)
-        print("Inferred file type: %s" % fileType)
-        guessConfig(globalConfigObj, fullname, fileType)
+        fileType = inferType(filename)
+        print("Inferred file type: %s" % fileType.name)
+        if fileType != FileType.IGNORED:
+            guessConfig(globalConfigObj, filename, fileType)
 
     categories = []
     for (_, sourceData) in globalConfigObj['sources'].items():

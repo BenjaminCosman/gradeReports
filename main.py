@@ -41,7 +41,8 @@ def peek_line(f):
     return line
 
 def getRows(sourceFileName, sourceType):
-    with open(os.fsencode(sourceFileName)) as source:
+    # with open(os.fsencode(sourceFileName)) as source:
+    with open(sourceFileName) as source:
         if sourceType == "UCSD Roster":
             while peek_line(source) != "Sec ID,PID,Student,Credits,College,Major,Level,Email\n":
                 source.readline()
