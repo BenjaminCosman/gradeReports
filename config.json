@@ -29,7 +29,7 @@
                 "PID": "Student ID"
             },
             "items": [
-                {"name": "Week4", "match": "Score", "max_points": 4, "type": "review-quiz", "filters": ["stripDenominator"], "due_date": "1/27/2019 23:53:24", "timestampCol": "Timestamp"}
+                {"name": "Week4", "scoreCol": "Score", "max_points": 4, "type": "review-quiz", "filters": ["stripDenominator"], "due_date": "1/27/2019 23:53:24", "timestampCol": "Timestamp"}
             ]
         }
     },

@@ -21,8 +21,8 @@
                 "Email": "Email"
             },
             "items": [
-                {"name": "HW-1", "match": "HW 1", "max_points": 32, "type": "homework", "filters": ["BlankTo0"]},
-                {"name": "HW-5", "match": "HW 5", "max_points": 38, "type": "homework", "filters": ["BlankTo0"]}
+                {"name": "HW-1", "scoreCol": "HW 1", "max_points": 32, "type": "homework", "filters": ["BlankTo0"]},
+                {"name": "HW-5", "scoreCol": "HW 5", "max_points": 38, "type": "homework", "filters": ["BlankTo0"]}
             ]
         },
         "data/clickerRegistrations.csv": {
@@ -38,8 +38,8 @@
                 "Remote ID": "Clicker ID"
             },
             "items": [
-                {"name": "12/7", "match": "12/7/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
-                {"name": "11/30", "match": "11/30/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]}
+                {"name": "12/7", "scoreCol": "12/7/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
+                {"name": "11/30", "scoreCol": "11/30/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]}
             ]
         },
         "data/Week1ReviewQuiz.csv": {
@@ -48,7 +48,7 @@
                 "PID": "Student ID"
             },
             "items": [
-                {"name": "Week1", "match": "Score", "max_points": 4, "type": "review-quiz", "filters": ["stripDenominator"], "due_date": "10/04/2018 11:59:59 PM PDT"}
+                {"name": "Week1", "scoreCol": "Score", "max_points": 4, "type": "review-quiz", "filters": ["stripDenominator"], "due_date": "1/27/2019 23:53:24", "timestampCol": "Timestamp"}
             ]
         }
     },

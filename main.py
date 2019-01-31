@@ -62,7 +62,7 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
                 studentInfo[internalName] = checkAndClean(identVal, studentAttrDict[internalName]['filters'])
             grades = {}
             for assignment in sourceConfigReader:
-                score = record[assignment['match']]
+                score = record[assignment['scoreCol']]
                 score = float(checkAndClean(score, assignment['filters']))
                 if "due_date" in assignment:
                     #TODO: think about how to handle multiple submissions by same student
