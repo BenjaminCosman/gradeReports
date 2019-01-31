@@ -2,6 +2,7 @@ import sys, os, csv, json
 import pdfkit
 import argparse
 import dateutil.parser
+from fileFormats import getRows
 
 DEFAULT_CONFIG_FILENAME = 'config.json'
 
@@ -29,7 +30,7 @@ filtersAndChecks = {
     'remove#': lambda x: x[1:] if len(x) > 0 and x[0] == '#' else x,
     'toUpper': lambda x: x.upper(),
     'NVto0': lambda x: 0 if x == 'NV' else x,
-    'BlankTo0': lambda x: 0 if x == '' else x,
+    'NoneTo0': lambda x: 0 if x == '' or x == 'None' else x,
     'stripDenominator': lambda x: x.split('/')[0].strip()
 }
 
@@ -40,18 +41,9 @@ def peek_line(f):
     f.seek(pos)
     return line
 
-def getRows(sourceFileName, sourceType):
-    # with open(os.fsencode(sourceFileName)) as source:
-    with open(sourceFileName) as source:
-        if sourceType == "UCSD Roster":
-            while peek_line(source) != "Sec ID,PID,Student,Credits,College,Major,Level,Email\n":
-                source.readline()
-        rows = list(csv.DictReader(source))
-        return rows
-
 # returns [(Student, [Grade])]
 def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
-    rows = getRows(sourceFileName, assignmentConfigObj.get("type", None))
+    rows = getRows(sourceFileName, assignmentConfigObj)
     identDict = assignmentConfigObj["attributes"]
     sourceConfigReader = assignmentConfigObj["items"]
     outputList = []
@@ -63,6 +55,9 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
                 studentInfo[internalName] = checkAndClean(identVal, studentAttrDict[internalName]['filters'])
             grades = {}
             for assignment in sourceConfigReader:
+                sheetName = assignment.get('sheetName', None)
+                if (sheetName != None) and (record['_sheetName'] != sheetName):
+                    continue
                 scoreCol = assignment['scoreCol']
                 # Check for special value denoting scored-for-completion
                 if scoreCol == False:
@@ -71,11 +66,10 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
                     score = record[scoreCol]
                     score = float(checkAndClean(score, assignment['filters']))
                     if "due_date" in assignment:
-                        #TODO: correctly handle multiple submissions by same student
                         dueDate = dateutil.parser.parse(assignment['due_date'])
                         turninDate = dateutil.parser.parse(record[assignment['timestampCol']])
                         if turninDate > dueDate:
-                            score = 0
+                            continue
                 grades[assignment[ASSIGNMENT_NAME_KEY]] = score
             outputList.append((studentInfo, grades))
         except IncorrectLengthException:
