@@ -121,12 +121,13 @@ def guessConfig(globalConfigObj, filename, fileType):
             itemConfig.append({"name": name, "scoreCol": False, "max_points": 1, "type": fileType.name, "filters": [], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
 
-    globalConfigObj["sources"][filename] = {
+    globalConfigObj["sources"].append({
+        "file": filename,
         "_autoconf_fileType": fileType.name,
         "attributes": attrConfig,
         "items": itemConfig, #[NoIndent(x) for x in itemConfig],
         "_autoconf_ignoredCols": ignoredCols
-    }
+    })
 
 def main(dataDir):
     # if os.path.exists(CONFIG_FILENAME):
@@ -141,7 +142,7 @@ def main(dataDir):
             "Student ID": {"identifiesStudent": True, "onePerStudent": True, "filters": ["strip", "9char", "toUpper"]},
             "Clicker ID": {"identifiesStudent": True, "filters": ["strip", "remove#", "8char", "toUpper"]}
         },
-        "sources": {},
+        "sources": [],
         "outputs": {
             "report-name": "CSEnn Grade Report",
             "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
@@ -159,10 +160,10 @@ def main(dataDir):
         if fileType != FileType.IGNORED:
             guessConfig(globalConfigObj, filename, fileType)
 
-    categories = []
-    for (_, sourceData) in globalConfigObj['sources'].items():
+    categories = set()
+    for sourceData in globalConfigObj['sources']:
         for item in sourceData['items']:
-            categories.append(item['type'])
+            categories.add(item['type'])
     globalConfigObj['outputs']['content'] = [{ "title": c, "from": c} for c in categories]
 
     with open(OUTFILE, 'w') as outFile:

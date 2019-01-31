@@ -65,6 +65,19 @@
                 {"name": "Week 2", "scoreCol": "Week 2", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]},
                 {"name": "Week 3", "scoreCol": "Week 3", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]}
             ]
+        },
+        {
+            "file": "data/CSE 105 Winter 2019 Discussion attendance.xlsx",
+            "sheetName": "others(waitlist)",
+
+            "attributes": {
+                "PID": "Student ID"
+            },
+            "items": [
+                {"name": "Week 1", "scoreCol": "Week 1", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]},
+                {"name": "Week 2", "scoreCol": "Week 2", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]},
+                {"name": "Week 3", "scoreCol": "Week 3", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]}
+            ]
         }
     ],
     "outputs": {
