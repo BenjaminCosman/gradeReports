@@ -55,9 +55,9 @@ def guessConfig(globalConfigObj, filename, fileType):
 
     with open(filename) as f:
         reader = csv.DictReader(f)
-        if len(set(reader.fieldnames)) != len(reader.fieldnames):
-            print(f"WARNING: duplicate column in {filename}")
 
+        # The UCSD roster is not a proper csv (more like 2 on top of each other)
+        # it gets special treatment here
         if fileType == "roster":
             globalConfigObj["sources"][filename] = {
                 "type": "UCSD Roster",
@@ -69,6 +69,9 @@ def guessConfig(globalConfigObj, filename, fileType):
                 "items": []
             }
             return
+
+        if len(set(reader.fieldnames)) != len(reader.fieldnames):
+            print(f"WARNING: duplicate column in {filename}")
 
         if fileType in ["other", "scoredGoogleForm", "unscoredGoogleForm"]:
             for item in reader.fieldnames:
@@ -164,11 +167,12 @@ def main(dataDir):
         # print(s)
         outFile.write(s)
         # json.dump(globalConfigObj, outFile, cls=NoIndentEncoder, indent=2, separators=(',', ': '))
+        print(f"Wrote config file to `{OUTFILE}``")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('sourcesDir', metavar='SOURCES_DIR', type=str, #nargs='?',
-        help='The folder containing your roster, grades, etc. Default: `data`',
+        help='The folder containing your roster, grades, etc.',# Default: `data`',
         default=DEFAULT_DATA_DIR)
     args = parser.parse_args()
     main(args.sourcesDir)

@@ -223,7 +223,7 @@ def main(configFilename):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', metavar='CONFIG_FILE', type=str, #nargs='?',
-        help='The .json file describing your class. Default: `config.json`',
+        help='The .json file describing your class.',# Default: `config.json`',
         default=DEFAULT_CONFIG_FILENAME)
     args = parser.parse_args()
     main(args.filename)
