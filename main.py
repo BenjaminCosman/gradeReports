@@ -1,6 +1,7 @@
 import sys, os, csv, json
 import pdfkit
 import argparse
+import dateutil.parser
 
 DEFAULT_CONFIG_FILENAME = 'config.json'
 
@@ -62,7 +63,14 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
             grades = {}
             for assignment in sourceConfigReader:
                 score = record[assignment['match']]
-                grades[assignment[ASSIGNMENT_NAME_KEY]] = float(checkAndClean(score, assignment['filters']))
+                score = float(checkAndClean(score, assignment['filters']))
+                if "due_date" in assignment:
+                    #TODO: think about how to handle multiple submissions by same student
+                    dueDate = dateutil.parser.parse(assignment['due_date'])
+                    turninDate = dateutil.parser.parse(record[assignment['timestampCol']])
+                    if turninDate > dueDate:
+                        score = 0
+                grades[assignment[ASSIGNMENT_NAME_KEY]] = score
             outputList.append((studentInfo, grades))
         except IncorrectLengthException:
             print(f"WARNING: in file {sourceFileName}, invalid value for {internalName}: '{identVal}'")
