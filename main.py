@@ -8,20 +8,10 @@ GRADES_KEY = 'Grades'
 INFO_KEY = 'Info'
 ASSIGNMENT_NAME_KEY = 'name'
 
-def mkScore(scoreString, flags):
-    #TODO: better flags handling
-    if flags == 'NVto0' and scoreString == 'NV':
-        scoreString = 0
-    if flags == 'BlankTo0' and scoreString == '':
-        scoreString = 0
-    if flags == 'stripDenominator':
-        scoreString = scoreString.split('/')[0].strip()
-    return float(scoreString)
-
-def checkAndClean(identVal, internalName, filters):
-    for filterCheck in filters:
-        identVal = filtersAndChecks[filterCheck](identVal)
-    return identVal
+def checkAndClean(s, filters):
+    for f in filters:
+        s = filtersAndChecks[f](s)
+    return s
 
 class IncorrectLengthException(Exception):
     pass
@@ -37,6 +27,9 @@ filtersAndChecks = {
     '9char': mkCheckNChar(9),
     'remove#': lambda x: x[1:] if len(x) > 0 and x[0] == '#' else x,
     'toUpper': lambda x: x.upper(),
+    'NVto0': lambda x: 0 if x == 'NV' else x,
+    'BlankTo0': lambda x: 0 if x == '' else x,
+    'stripDenominator': lambda x: x.split('/')[0].strip()
 }
 
 # https://stackoverflow.com/a/16840747/6036628
@@ -65,11 +58,11 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
             studentInfo = {}
             for (identCol, internalName) in identDict.items():
                 identVal = record[identCol]
-                studentInfo[internalName] = checkAndClean(identVal, internalName, studentAttrDict[internalName]['filters'])
+                studentInfo[internalName] = checkAndClean(identVal, studentAttrDict[internalName]['filters'])
             grades = {}
             for assignment in sourceConfigReader:
                 score = record[assignment['match']]
-                grades[assignment[ASSIGNMENT_NAME_KEY]] = mkScore(score, assignment['flags'])
+                grades[assignment[ASSIGNMENT_NAME_KEY]] = float(checkAndClean(score, assignment['filters']))
             outputList.append((studentInfo, grades))
         except IncorrectLengthException:
             print(f"WARNING: in file {sourceFileName}, invalid value for {internalName}: '{identVal}'")
@@ -216,7 +209,8 @@ def main(configFilename):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('filename', metavar='FILENAME', type=str, nargs='?',
-                        help='some help', default=DEFAULT_CONFIG_FILENAME)
+    parser.add_argument('filename', metavar='CONFIG_FILE', type=str, nargs='?',
+        help='The .json file describing your class. Default: `config.json`',
+        default=DEFAULT_CONFIG_FILENAME)
     args = parser.parse_args()
     main(args.filename)
