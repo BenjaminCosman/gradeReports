@@ -7,9 +7,15 @@ OUTFILE = 'tempConfig.json'
 
 keywords = {
     "Roster Name": [r'name\b'],
+    "Section": [r'\bsection\b', r'\bsect\b', r'\bsec\b'],
     "Email": [r'\bemail\b'],
     "Student ID": [r'\bpid\b', r'\bsid\b'],
-    "Clicker ID": [r'\bclicker\b', r'\biclicker\b', r'\bremote\b']
+    "Clicker ID": [r'\bclicker\b', r'\biclicker\b', r'\bremote\b'],
+
+    # "homework": [r'\bhw\b', r'\bhomework\b', r'\bassignment\b'],
+    # "quiz": [r'\bquiz\b'],
+    # "exam": [r'\bexam\b'],
+    # "test": [r'\btest\b'],
 }
 
 def inferType(fullname):
@@ -18,11 +24,23 @@ def inferType(fullname):
         return "unknown"
     with open(fullname) as f:
         reader = csv.DictReader(f)
+        fields = reader.fieldnames
+
+        if fields[:4] == ['Sect ID', 'Course', 'Title', 'SecCode']:
+            return "roster"
+
         lastCol = ""
-        for col in reader.fieldnames:
+        for col in fields:
             if col == lastCol + " - Max Points":
                 return "gradescope"
             lastCol = col
+
+        if fields[0] == 'Timestamp':
+            if 'Score' in fields:
+                return "scoredGoogleForm"
+            else:
+                return "unscoredGoogleForm"
+
         return "other"
 
 def guessConfig(globalConfigObj, filename, fileType):
@@ -34,11 +52,13 @@ def guessConfig(globalConfigObj, filename, fileType):
     for attr in allAttrs:
         if attr in keywords:
             keywordLookup.update({keyword:attr for keyword in keywords[attr]})
+
     with open(filename) as f:
         reader = csv.DictReader(f)
-        if fileType == "other":
-            if len(set(reader.fieldnames)) != len(reader.fieldnames):
-                print(f"WARNING: duplicate column in {filename}")
+        if len(set(reader.fieldnames)) != len(reader.fieldnames):
+            print(f"WARNING: duplicate column in {filename}")
+
+        if fileType in ["other", "scoredGoogleForm", "unscoredGoogleForm"]:
             for item in reader.fieldnames:
                 itemLowered = item.lower()
 
@@ -62,29 +82,37 @@ def guessConfig(globalConfigObj, filename, fileType):
                         attrConfig.update({item: identifiedAttr})
                     else:
                         ignoredCols.append(item)
-                    continue
+                # Otherwise, assume it's an assignment grade (for 'other' filetypes only)
+                else:
+                    if fileType == "other":
+                        itemType = "unknown"
+                        if "hw" in item or "assignment" in item or "homework" in item:
+                            itemType = "homework"
+                        itemConfig.append({"name": item, "match": item, "max_points": 1, "type": itemType})
 
-                # Otherwise, assume it's an assignment grade
-                itemType = "unknown"
-                if "hw" in item or "assignment" in item or "homework" in item:
-                    itemType = "homework"
-                itemConfig.append({"name": item, "match": item, "max_points": 1, "type": itemType})
+        if fileType == "scoredGoogleForm":
+            row = reader.__next__()
+            score = row['Score']
+            maxPoints = int(score.split('/')[1].strip())
+            name = os.path.splitext(os.path.basename(filename))[0]
+            itemConfig.append({"name": name, "match": "Score", "max_points": maxPoints, "type": "scoredGoogleForm", "filters": ["stripDenominator"], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
     globalConfigObj["sources"][filename] = {
-        "_fileType": fileType,
+        "_autoconf_fileType": fileType,
         "attributes": attrConfig,
         "items": [NoIndent(x) for x in itemConfig],
-        "_ignoredCols": ignoredCols
+        "_autoconf_ignoredCols": ignoredCols
     }
 
 def main():
-    if os.path.exists(CONFIG_FILENAME):
+    if False:#os.path.exists(CONFIG_FILENAME):
         with open(CONFIG_FILENAME) as configFile:
             globalConfigObj = json.load(configFile)
     else:
         globalConfigObj = {
             "studentAttributes": {
                 "Roster Name": {"onePerStudent": True},
+                "Section": {"onePerStudent": True},
                 "Email": {},
                 "Student ID": {"identifiesStudent": True, "onePerStudent": True, "filters": ["strip", "9char", "toUpper"]},
                 "Clicker ID": {"identifiesStudent": True, "filters": ["strip", "remove#", "8char", "toUpper"]}
