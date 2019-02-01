@@ -2,8 +2,7 @@ import csv, sys, os
 import openpyxl
 
 # Dispatches to one of the functions below
-def getRows(sourceFileName, assignmentConfigObj):
-    isRoster = assignmentConfigObj.get("isRoster", False)
+def getRows(sourceFileName, isRoster, sheetName):
     (_, ext) = os.path.splitext(sourceFileName)
     if ext == '.csv':
         if isRoster:
@@ -11,7 +10,6 @@ def getRows(sourceFileName, assignmentConfigObj):
         else:
             return getRowsNormalCSV(sourceFileName)
     elif ext == '.xlsx':
-        sheetName = assignmentConfigObj.get("sheetName", None)
         if isRoster:
             if sheetName == None:
                 raise Exception("must specify sheetName for roster")
@@ -48,7 +46,7 @@ def getRowsNormalSingleSheetXLSX(sourceFileName, sheetname):
     it = ws.values
     header = it.__next__()
     fieldnames = list(header)
-    return [{fieldnames[i]:str(value) for (i,value) in enumerate(row) if i < len(fieldnames)} for row in it]
+    return xlsxRows(fieldnames, it)
 
 def getRowsNormalMultiSheetXLSX(sourceFileName):
     wb = openpyxl.load_workbook(filename=sourceFileName, read_only=True)
@@ -57,11 +55,7 @@ def getRowsNormalMultiSheetXLSX(sourceFileName):
         it = ws.values
         header = it.__next__()
         fieldnames = list(header)
-        # rows = []
-        # for row in it:
-        #     if len(row) > len(header):
-        #         print("WARNING: row is longer than header")
-        rows = [{fieldnames[i]:str(value) for (i,value) in enumerate(row) if i < len(fieldnames)} for row in it]
+        rows = xlsxRows(fieldnames, it)
         for row in rows:
             row.update({"_sheetName": ws.title})
         output += rows
@@ -87,4 +81,16 @@ def getRowsRosterSingleSheetXLSX(sourceFileName, sheetname):
     if not foundHeader:
         raise Exception("roster header not found")
 
-    return [{fieldnames[i]:str(value) for (i,value) in enumerate(row) if i < len(fieldnames)} for row in it]
+    return xlsxRows(fieldnames, it)
+
+
+def xlsxRows(fieldnames, it):
+    rows = []
+    for row in it:
+        row = list(row)
+        if len(row) > len(fieldnames):
+            print("WARNING: row is longer than header")
+        if len(row) < len(fieldnames):
+            row = row + [None]*(len(fieldnames)-len(row))
+        rows.append(dict(zip(fieldnames, map(str, row))))
+    return rows

@@ -43,7 +43,7 @@ def peek_line(f):
 
 # returns [(Student, [Grade])]
 def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
-    rows = getRows(sourceFileName, assignmentConfigObj)
+    rows = getRows(sourceFileName, assignmentConfigObj.get("isRoster", False), assignmentConfigObj.get("sheetName", None))
     identDict = assignmentConfigObj["attributes"]
     sourceConfigReader = assignmentConfigObj["items"]
     outputList = []
@@ -63,7 +63,11 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
                 if scoreCol == False:
                     score = assignment['max_points']
                 else:
-                    score = record[scoreCol]
+                    try:
+                        score = record[scoreCol]
+                    except:
+                        print(assignment, sourceFileName, sheetName, record)
+                        raise hell
                     score = float(checkAndClean(score, assignment['filters']))
                     if "due_date" in assignment:
                         dueDate = dateutil.parser.parse(assignment['due_date'])
@@ -209,7 +213,10 @@ def main(configFilename):
             try:
                 studentID = getStudentID(studentAttrDict, primaryAttr, roster, studentInfo)
                 mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID)
-                roster[primaryAttr][studentID][GRADES_KEY].update(grades)
+                for (k,v) in grades.items():
+                    oldGrade = roster[primaryAttr][studentID][GRADES_KEY].get(k,0)
+                    roster[primaryAttr][studentID][GRADES_KEY][k] = max(oldGrade, v)
+                    # roster[primaryAttr][studentID][GRADES_KEY].update(grades)
             except UnidentifiableStudentException:
                 print(f"WARNING: could not identify student ({studentInfo})")
 
