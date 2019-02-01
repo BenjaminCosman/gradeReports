@@ -215,8 +215,8 @@ def main(configFilename):
                 mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID)
                 for (k,v) in grades.items():
                     oldGrade = roster[primaryAttr][studentID][GRADES_KEY].get(k,0)
+                    # Always keep the highest grade for each assignment (TODO: replace with more flexible policy?)
                     roster[primaryAttr][studentID][GRADES_KEY][k] = max(oldGrade, v)
-                    # roster[primaryAttr][studentID][GRADES_KEY].update(grades)
             except UnidentifiableStudentException:
                 print(f"WARNING: could not identify student ({studentInfo})")
 
