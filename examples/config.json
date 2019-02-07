@@ -3,7 +3,7 @@
         "Roster Name": {"onePerStudent": true},
         "Section": {"onePerStudent": true},
         "Email": {},
-        "Student ID": {"identifiesStudent": true, "onePerStudent": true, "filters": ["strip", "9char", "toUpper"]},
+        "Student ID": {"identifiesStudent": true, "onePerStudent": true, "filters": ["strip", "toUpper", "ucsdIDCheck"]},
         "Clicker ID": {"identifiesStudent": true, "filters": ["strip", "remove#", "8char", "toUpper"]}
     },
     "sources": [
@@ -18,6 +18,14 @@
             "items": []
         },
         {
+            "file": "examples/data/clickerRegistrations.csv",
+            "attributes": {
+                "Your PID": "Student ID",
+                "Your iclicker ID": "Clicker ID"
+            },
+            "items": []
+        },
+        {
             "file": "examples/data/CSE777_Fall_2018_grades.csv",
             "attributes": {
                 "SID": "Student ID"
@@ -26,14 +34,6 @@
                 {"name": "HW-1", "scoreCol": "HW 1", "max_points": 32, "type": "homework", "filters": ["NoneTo0"]},
                 {"name": "HW-2", "scoreCol": "HW 2", "max_points": 38, "type": "homework", "filters": ["NoneTo0"]}
             ]
-        },
-        {
-            "file": "examples/data/clickerRegistrations.csv",
-            "attributes": {
-                "Your PID": "Student ID",
-                "Your iclicker ID": "Clicker ID"
-            },
-            "items": []
         },
         {
             "file": "examples/data/UploadFile.csv",

@@ -1,4 +1,4 @@
-import sys, os, csv, json
+import sys, os, csv, json, re
 import pdfkit
 import argparse
 import dateutil.parser
@@ -15,18 +15,20 @@ def checkAndClean(s, filters):
         s = filtersAndChecks[f](s)
     return s
 
-class IncorrectLengthException(Exception):
+class IncorrectFormatException(Exception):
     pass
-def mkCheckNChar(n):
-    def checkNChar(x):
-        if len(x) != n:
-            raise IncorrectLengthException()
-        return x
-    return checkNChar
+def ucsdStudentIDCheck(x):
+    if not re.fullmatch(r'^[AU]\d{8}$', x):
+        raise IncorrectFormatException()
+    return x
+def checkNChar(x, n):
+    if len(x) != n:
+        raise IncorrectFormatException()
+    return x
 filtersAndChecks = {
     'strip': lambda x: x.strip(),
-    '8char': mkCheckNChar(8),
-    '9char': mkCheckNChar(9),
+    'ucsdIDCheck': ucsdStudentIDCheck,
+    '8char': lambda x: checkNChar(x, 8),
     'remove#': lambda x: x[1:] if len(x) > 0 and x[0] == '#' else x,
     'toUpper': lambda x: x.upper(),
     'NVto0': lambda x: 0 if x == 'NV' else x,
@@ -69,7 +71,7 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
                             continue
                 grades[assignment[ASSIGNMENT_NAME_KEY]] = score
             outputList.append((studentInfo, grades))
-        except IncorrectLengthException:
+        except IncorrectFormatException:
             print(f"WARNING: in file {sourceFileName}, invalid value for {internalName}: '{identVal}'")
     return outputList
 
@@ -118,7 +120,7 @@ def mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID
             if val not in roster[key]:
                 roster[key][val] = studentID
             elif roster[key][val] != studentID:
-                print(key, val, roster[key][val])
+                print(key, val, roster[key][val], studentID)
                 print("ERROR: reassigning identifer")
     return studentID
 

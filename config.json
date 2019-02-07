@@ -3,7 +3,7 @@
         "Roster Name": {"onePerStudent": true},
         "Section": {"onePerStudent": true},
         "Email": {},
-        "Student ID": {"identifiesStudent": true, "onePerStudent": true, "filters": ["strip", "9char", "toUpper"]},
+        "Student ID": {"identifiesStudent": true, "onePerStudent": true, "filters": ["strip", "toUpper", "ucsdIDCheck"]},
         "Clicker ID": {"identifiesStudent": true, "filters": ["strip", "remove#", "8char", "toUpper"]}
     },
     "sources": [

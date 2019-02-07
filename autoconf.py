@@ -1,12 +1,15 @@
 import json, os, csv, re, argparse, glob
 from enum import Enum
-# import openpyxl
+# from xlsxReader import XLSXReader
+import openpyxl
+from fileFormats import getRows
 # from JSONprinter import NoIndentEncoder, NoIndent
 
 # CONFIG_FILENAME = 'config.json'
 DEFAULT_DATA_DIR = 'data'
 OUTFILE = 'tempConfig.json'
 
+FileFormat = Enum('FileFormat', 'CSV_UCSD_ROSTER CSV_OTHER XLSX_ROSTER XLSX_OTHER, IGNORED')
 FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM OTHER IGNORED')
 
 keywords = {
@@ -22,30 +25,65 @@ keywords = {
     # "test": [r'\btest\b'],
 }
 
-def inferType(fullname):
-    (_, ext) = os.path.splitext(fullname)
-    if ext != ".csv":
-        return FileType.IGNORED
-    with open(fullname) as f:
-        reader = csv.DictReader(f)
-        fields = reader.fieldnames
-
-        if fields[:5] == ['Sect ID', 'Course', 'Title', 'SecCode', 'Instructor']:
-            return FileType.ROSTER
-
-        lastCol = ""
-        for col in fields:
-            if col == lastCol + " - Max Points":
-                return FileType.GRADESCOPE
-            lastCol = col
-
-        if fields[0] == 'Timestamp':
-            if 'Score' in fields:
-                return FileType.SCORED_GOOGLE_FORM
+def inferFormat(filename):
+    (_, ext) = os.path.splitext(filename)
+    if ext == ".csv":
+        with open(filename) as f:
+            reader = csv.DictReader(f)
+            fields = reader.fieldnames
+            if fields[:5] == ['Sect ID', 'Course', 'Title', 'SecCode', 'Instructor']:
+                return FileFormat.CSV_UCSD_ROSTER
             else:
-                return FileType.UNSCORED_GOOGLE_FORM
+                return FileFormat.CSV_OTHER
+    elif ext == ".xlsx":
+        wb = openpyxl.load_workbook(filename=filename, read_only=True)
+        ws = wb.active
+        fields = ws.values.__next__()
+        if fields == ('Sect ID', 'Course', 'Title', 'SecCode', 'Instructor'):
+            return FileFormat.XLSX_ROSTER
+        else:
+            return FileFormat.XLSX_OTHER
+    else:
+        return FileFormat.IGNORED
 
-        return FileType.OTHER
+def inferType(filename, fileFormat):
+    if fileFormat == FileFormat.XLSX_OTHER:
+        pass#TODO
+    (_, ext) = os.path.splitext(filename)
+    if ext in [".csv", ".xlsx"]:
+        fields = getFields(filename)
+        return inferTypeFromFields(fields)
+    else:
+        return FileType.IGNORED
+
+def getFields(filename):
+    (_, ext) = os.path.splitext(filename)
+    if ext == ".csv":
+        with open(filename) as f:
+            reader = csv.DictReader(f)
+            return reader.fieldnames
+    elif ext == ".xlsx":
+        wb = openpyxl.load_workbook(filename=filename, read_only=True)
+        ws = wb.active
+        it = ws.values
+        return it.__next__()
+    else:
+        raise Exception("bad file type")
+
+def inferTypeFromFields(fields):
+    lastCol = ""
+    for col in fields:
+        if col == lastCol + " - Max Points":
+            return FileType.GRADESCOPE
+        lastCol = col
+
+    if fields[0] == 'Timestamp':
+        if 'Score' in fields:
+            return FileType.SCORED_GOOGLE_FORM
+        else:
+            return FileType.UNSCORED_GOOGLE_FORM
+
+    return FileType.OTHER
 
 def guessConfig(globalConfigObj, filename, fileType):
     attrConfig = {}
@@ -57,69 +95,55 @@ def guessConfig(globalConfigObj, filename, fileType):
         if attr in keywords:
             keywordLookup.update({keyword:attr for keyword in keywords[attr]})
 
-    with open(filename) as f:
-        reader = csv.DictReader(f)
+    fields = getFields(filename)
 
-        # The UCSD roster is not a proper csv (more like 2 on top of each other)
-        # it gets special treatment here
-        if fileType == FileType.ROSTER:
-            globalConfigObj["sources"][filename] = {
-                "type": "UCSD Roster",
-                "attributes": {
-                    "Email": "Email",
-                    "PID": "Student ID",
-                    "Student": "Roster Name"
-                },
-                "items": []
-            }
-            return
+    if len(set(fields)) != len(fields):
+        print(f"WARNING: duplicate column in {filename}")
 
-        if len(set(reader.fieldnames)) != len(reader.fieldnames):
-            print(f"WARNING: duplicate column in {filename}")
+    if fileType in [FileType.OTHER, FileType.SCORED_GOOGLE_FORM, FileType.UNSCORED_GOOGLE_FORM]:
+        for item in fields:
+            itemLowered = item.lower()
 
-        if fileType in [FileType.OTHER, FileType.SCORED_GOOGLE_FORM, FileType.UNSCORED_GOOGLE_FORM]:
-            for item in reader.fieldnames:
-                itemLowered = item.lower()
+            # First, check if the column name is referring to a student attribute
+            identifiedAttr = None
+            if itemLowered in [attr.lower() for attr in allAttrs]:
+                identifiedAttr = item
+            else:
+                # itemWords = itemLowered.split()
+                for (keyword, attr) in keywordLookup.items():
+                    if re.search(keyword, itemLowered):
+                        identifiedAttr = attr
+                        break
 
-                # First, check if the column name is referring to a student attribute
-                identifiedAttr = None
-                if itemLowered in [attr.lower() for attr in allAttrs]:
-                    identifiedAttr = item
+            # If so, record it and move on to next column
+            if identifiedAttr is not None:
+                if identifiedAttr in attrConfig.values():
+                    print(f"WARNING: found two columns for attribute {identifiedAttr}")
+                    ignoredCols.append(item)
+                elif allAttrs[identifiedAttr].get("identifiesStudent", False):
+                    attrConfig.update({item: identifiedAttr})
                 else:
-                    # itemWords = itemLowered.split()
-                    for (keyword, attr) in keywordLookup.items():
-                        if re.search(keyword, itemLowered):
-                            identifiedAttr = attr
-                            break
+                    ignoredCols.append(item)
+            # Otherwise, assume it's an assignment grade (for 'other' filetypes only)
+            else:
+                if fileType == FileType.OTHER:
+                    itemType = "unknown"
+                    if "hw" in item or "assignment" in item or "homework" in item:
+                        itemType = "homework"
+                    itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType, "filters": ["NoneTo0", "NVto0"]})
 
-                # If so, record it and move on to next column
-                if identifiedAttr is not None:
-                    if identifiedAttr in attrConfig.values():
-                        print(f"WARNING: found two columns for attribute {identifiedAttr}")
-                        ignoredCols.append(item)
-                    elif allAttrs[identifiedAttr].get("identifiesStudent", False):
-                        attrConfig.update({item: identifiedAttr})
-                    else:
-                        ignoredCols.append(item)
-                # Otherwise, assume it's an assignment grade (for 'other' filetypes only)
-                else:
-                    if fileType == FileType.OTHER:
-                        itemType = "unknown"
-                        if "hw" in item or "assignment" in item or "homework" in item:
-                            itemType = "homework"
-                        itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType})
+    if fileType == FileType.SCORED_GOOGLE_FORM:
+        rows = getRows(filename, False, None)
+        row = rows[0]
+        score = row['Score']
+        print(row)
+        maxPoints = int(score.split('/')[1].strip())
+        name = os.path.splitext(os.path.basename(filename))[0]
+        itemConfig.append({"name": name, "scoreCol": "Score", "max_points": maxPoints, "type": fileType.name, "filters": ["stripDenominator"], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
-        if fileType == FileType.SCORED_GOOGLE_FORM:
-            row = reader.__next__()
-            score = row['Score']
-            maxPoints = int(score.split('/')[1].strip())
-            name = os.path.splitext(os.path.basename(filename))[0]
-            itemConfig.append({"name": name, "scoreCol": "Score", "max_points": maxPoints, "type": fileType.name, "filters": ["stripDenominator"], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
-
-        if fileType == FileType.UNSCORED_GOOGLE_FORM:
-            name = os.path.splitext(os.path.basename(filename))[0]
-            itemConfig.append({"name": name, "scoreCol": False, "max_points": 1, "type": fileType.name, "filters": [], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
-
+    if fileType == FileType.UNSCORED_GOOGLE_FORM:
+        name = os.path.splitext(os.path.basename(filename))[0]
+        itemConfig.append({"name": name, "scoreCol": False, "max_points": 1, "type": fileType.name, "filters": [], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
     globalConfigObj["sources"].append({
         "file": filename,
@@ -139,7 +163,7 @@ def main(dataDir):
             "Roster Name": {"onePerStudent": True},
             "Section": {"onePerStudent": True},
             "Email": {},
-            "Student ID": {"identifiesStudent": True, "onePerStudent": True, "filters": ["strip", "9char", "toUpper"]},
+            "Student ID": {"identifiesStudent": True, "onePerStudent": True, "filters": ["strip", "toUpper", "ucsdIDCheck"]},
             "Clicker ID": {"identifiesStudent": True, "filters": ["strip", "remove#", "8char", "toUpper"]}
         },
         "sources": [],
@@ -155,10 +179,32 @@ def main(dataDir):
     print("Searching `%s` for csv files..." % dataDir)
     for filename in glob.iglob(os.path.join(dataDir,'**'), recursive=True):
         print("Found file `%s`" % filename)
-        fileType = inferType(filename)
+        fileFormat = inferFormat(filename)
+        if fileFormat == FileFormat.IGNORED:
+            print("Ignoring.")
+            continue
+        if fileFormat in [FileFormat.CSV_UCSD_ROSTER, FileFormat.XLSX_ROSTER]:
+            print("Using hard-coded roster config")
+            # The UCSD roster is not a proper csv (more like 2 on top of each other)
+            obj = {
+                "file": filename,
+                "isRoster": True,
+                "attributes": {
+                    "Email": "Email",
+                    "PID": "Student ID",
+                    "Student": "Roster Name"
+                },
+                "items": []
+            }
+            globalConfigObj["sources"].append(obj)
+            continue
+        fileType = inferType(filename, fileFormat)
         print("Inferred file type: %s" % fileType.name)
-        if fileType != FileType.IGNORED:
-            guessConfig(globalConfigObj, filename, fileType)
+        if fileType == FileType.IGNORED:
+            print("Ignoring.")
+            continue
+        guessConfig(globalConfigObj, filename, fileType)
+    globalConfigObj["sources"].sort(key=mySort, reverse=True)
 
     categories = set()
     for sourceData in globalConfigObj['sources']:
@@ -172,6 +218,14 @@ def main(dataDir):
         outFile.write(s)
         # json.dump(globalConfigObj, outFile, cls=NoIndentEncoder, indent=2, separators=(',', ': '))
         print(f"Wrote config file to `{OUTFILE}``")
+
+# TODO: remove dependency on order of sources - right now sources that define and
+# connect student attributes should come first (e.g. roster, then clicker registrations)
+def mySort(obj):
+    return (
+        "isRoster" in obj,
+        len(obj["attributes"])
+    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
