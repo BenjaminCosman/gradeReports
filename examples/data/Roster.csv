@@ -1,0 +1,8 @@
+Sect ID,Course,Title,SecCode,Instructor,,,
+111115,CSE777,Intro to Grade Reporting,A01,"Cosman, Ben",,,
+111117,CSE777,Intro to Grade Reporting,B01,"Cosman, Ben",,,
+,,,,,,,
+Sec ID,PID,Student,Credits,College,Major,Level,Email
+111115,A12345678,"Acirewyn, Ash A",4,SI,CS25,JR,ash@ucsd.edu
+111117,A87654321,"Brelaric, Bill B",4,RE,CS26,FR,bill@ucsd.edu
+111115,A33333333,"Chirameth, Cam C",4,WA,MA30,SO,cam@ucsd.edu

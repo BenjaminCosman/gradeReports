@@ -8,7 +8,7 @@
     },
     "sources": [
         {
-            "file": "data/Roster.csv",
+            "file": "examples/data/Roster.csv",
             "isRoster": true,
             "attributes": {
                 "Email": "Email",
@@ -18,48 +18,45 @@
             "items": []
         },
         {
-            "file": "data/CSE20_Fall_2018_grades.csv",
+            "file": "examples/data/CSE777_Fall_2018_grades.csv",
             "attributes": {
-                "SID": "Student ID",
-                "Email": "Email"
+                "SID": "Student ID"
             },
             "items": [
                 {"name": "HW-1", "scoreCol": "HW 1", "max_points": 32, "type": "homework", "filters": ["NoneTo0"]},
-                {"name": "HW-5", "scoreCol": "HW 5", "max_points": 38, "type": "homework", "filters": ["NoneTo0"]}
+                {"name": "HW-2", "scoreCol": "HW 2", "max_points": 38, "type": "homework", "filters": ["NoneTo0"]}
             ]
         },
         {
-            "file": "data/clickerRegistrations.csv",
+            "file": "examples/data/clickerRegistrations.csv",
             "attributes": {
-                "Email Address": "Email",
                 "Your PID": "Student ID",
                 "Your iclicker ID": "Clicker ID"
             },
             "items": []
         },
         {
-            "file": "data/inClassClickersFinalBC_renamedCols.csv",
+            "file": "examples/data/UploadFile.csv",
             "attributes": {
                 "Remote ID": "Clicker ID"
             },
             "items": [
                 {"name": "12/7", "scoreCol": "12/7/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
-                {"name": "11/30", "scoreCol": "11/30/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]}
+                {"name": "12/5", "scoreCol": "12/5/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]}
             ]
         },
         {
-            "file": "data/Week1ReviewQuiz.csv",
+            "file": "examples/data/Week1ReviewQuiz.csv",
             "attributes": {
-                "Email Address": "Email",
                 "PID": "Student ID"
             },
             "items": [
-                {"name": "Week1", "scoreCol": "Score", "max_points": 4, "type": "review-quiz", "filters": ["stripDenominator"], "due_date": "1/27/2019 23:53:24", "timestampCol": "Timestamp"}
+                {"name": "Week1", "scoreCol": "Score", "max_points": 2, "type": "review-quiz", "filters": ["stripDenominator"], "due_date": "1/27/2019 23:53:24", "timestampCol": "Timestamp"}
             ]
         }
     ],
     "outputs": {
-        "report-name": "CSE105 Preliminary Grade Report",
+        "report-name": "CSE777 Preliminary Grade Report",
         "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
         "content": [
             { "title": "Homework", "from": "homework" },
