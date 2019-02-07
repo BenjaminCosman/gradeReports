@@ -4,6 +4,8 @@ Very much a work in progress; contact owner with questions.
 
 ## Installation
 
+Requires Python (possibly even Python 3.7.2+ ?)
+
 - Recommended: set up a virtual environment
 
 `python3 -m venv .venv`
