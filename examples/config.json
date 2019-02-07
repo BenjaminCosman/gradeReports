@@ -26,16 +26,6 @@
             "items": []
         },
         {
-            "file": "examples/data/CSE777_Fall_2018_grades.csv",
-            "attributes": {
-                "SID": "Student ID"
-            },
-            "items": [
-                {"name": "HW-1", "scoreCol": "HW 1", "max_points": 32, "type": "homework", "filters": ["NoneTo0"]},
-                {"name": "HW-2", "scoreCol": "HW 2", "max_points": 38, "type": "homework", "filters": ["NoneTo0"]}
-            ]
-        },
-        {
             "file": "examples/data/UploadFile.csv",
             "attributes": {
                 "Remote ID": "Clicker ID"
@@ -43,6 +33,16 @@
             "items": [
                 {"name": "12/7", "scoreCol": "12/7/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
                 {"name": "12/5", "scoreCol": "12/5/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]}
+            ]
+        },
+        {
+            "file": "examples/data/CSE777_Fall_2018_grades.csv",
+            "attributes": {
+                "SID": "Student ID"
+            },
+            "items": [
+                {"name": "HW-1", "scoreCol": "HW 1", "max_points": 32, "type": "homework", "filters": ["NoneTo0"]},
+                {"name": "HW-2", "scoreCol": "HW 2", "max_points": 38, "type": "homework", "filters": ["NoneTo0"]}
             ]
         },
         {

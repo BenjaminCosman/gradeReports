@@ -127,9 +127,7 @@ def guessConfig(globalConfigObj, filename, fileType):
             # Otherwise, assume it's an assignment grade (for 'other' filetypes only)
             else:
                 if fileType == FileType.OTHER:
-                    itemType = "unknown"
-                    if "hw" in item or "assignment" in item or "homework" in item:
-                        itemType = "homework"
+                    itemType = guessItemType(item)
                     itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType, "filters": ["NoneTo0", "NVto0"]})
 
     if fileType == FileType.SCORED_GOOGLE_FORM:
@@ -147,11 +145,74 @@ def guessConfig(globalConfigObj, filename, fileType):
 
     globalConfigObj["sources"].append({
         "file": filename,
-        "_autoconf_fileType": fileType.name,
+        # "_autoconf_fileType": fileType.name,
         "attributes": attrConfig,
         "items": itemConfig, #[NoIndent(x) for x in itemConfig],
-        "_autoconf_ignoredCols": ignoredCols
+        # "_autoconf_ignoredCols": ignoredCols
     })
+
+def guessItemType(item):
+    item = item.lower()
+    if "hw" in item or "assignment" in item or "homework" in item:
+        return "homework"
+    return "unknown"
+
+def guessGradescopeConfig(globalConfigObj, filename):
+    row = getRows(filename, False, None)[0]
+    fields = row.keys()
+    assignments = []
+    attrs = []
+    for field in fields:
+        if field + " - Max Points" in fields:
+            assignments.append(field)
+        elif " - Max Points" not in field and " - Lateness" not in field:
+            attrs.append(field)
+
+    attrConfig = {}
+    itemConfig = []
+    ignoredCols = []
+    allAttrs = globalConfigObj['studentAttributes']
+    keywordLookup = {}
+    for attr in allAttrs:
+        if attr in keywords:
+            keywordLookup.update({keyword:attr for keyword in keywords[attr]})
+
+    for item in attrs:
+        itemLowered = item.lower()
+        # First, check if the column name is referring to a student attribute
+        identifiedAttr = None
+        if itemLowered in [attr.lower() for attr in allAttrs]:
+            identifiedAttr = item
+        else:
+            for (keyword, attr) in keywordLookup.items():
+                if re.search(keyword, itemLowered):
+                    identifiedAttr = attr
+                    break
+        # If so, record it and move on to next column
+        if identifiedAttr is not None:
+            if identifiedAttr in attrConfig.values():
+                print(f"WARNING: found two columns for attribute {identifiedAttr}")
+                ignoredCols.append(item)
+            elif allAttrs[identifiedAttr].get("identifiesStudent", False):
+                attrConfig.update({item: identifiedAttr})
+            else:
+                ignoredCols.append(item)
+
+    for item in assignments:
+        itemType = guessItemType(item)
+        maxPoints = int(row[item + " - Max Points"])
+        itemConfig.append({"name": item, "scoreCol": item, "max_points": maxPoints, "type": itemType, "filters": ["NoneTo0"]})
+
+    globalConfigObj["sources"].append({
+        "file": filename,
+        # "_autoconf_fileType": FileType.GRADESCOPE.name,
+        "attributes": attrConfig,
+        "items": itemConfig,
+        # "_autoconf_ignoredCols": ignoredCols
+    })
+
+
+
 
 def main(dataDir):
     # if os.path.exists(CONFIG_FILENAME):
@@ -184,7 +245,7 @@ def main(dataDir):
             print("Ignoring.")
             continue
         if fileFormat in [FileFormat.CSV_UCSD_ROSTER, FileFormat.XLSX_ROSTER]:
-            print("Using hard-coded roster config")
+            print("Using default ROSTER config")
             # The UCSD roster is not a proper csv (more like 2 on top of each other)
             obj = {
                 "file": filename,
@@ -202,8 +263,10 @@ def main(dataDir):
         print("Inferred file type: %s" % fileType.name)
         if fileType == FileType.IGNORED:
             print("Ignoring.")
-            continue
-        guessConfig(globalConfigObj, filename, fileType)
+        elif fileType == FileType.GRADESCOPE:
+            guessGradescopeConfig(globalConfigObj, filename)
+        else:
+            guessConfig(globalConfigObj, filename, fileType)
     globalConfigObj["sources"].sort(key=mySort, reverse=True)
 
     categories = set()
@@ -217,7 +280,7 @@ def main(dataDir):
         # print(s)
         outFile.write(s)
         # json.dump(globalConfigObj, outFile, cls=NoIndentEncoder, indent=2, separators=(',', ': '))
-        print(f"Wrote config file to `{OUTFILE}``")
+        print(f"Wrote config file to `{OUTFILE}`")
 
 # TODO: remove dependency on order of sources - right now sources that define and
 # connect student attributes should come first (e.g. roster, then clicker registrations)
