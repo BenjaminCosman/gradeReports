@@ -1,5 +1,5 @@
 import csv, sys, os
-import openpyxl
+import pyexcel as pe
 
 # Dispatches to one of the functions below
 def getRows(sourceFileName, isRoster, sheetName):
@@ -25,72 +25,43 @@ def getRows(sourceFileName, isRoster, sheetName):
         raise Exception("unknown filetype")
 
 def getRowsNormalCSV(sourceFileName):
-    with open(sourceFileName) as source:
-        return list(csv.DictReader(source))
+    return pe.get_records(file_name=sourceFileName, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
 
 def getRowsRosterCSV(sourceFileName):
     with open(sourceFileName) as source:
         while peek_line(source) != "Sec ID,PID,Student,Credits,College,Major,Level,Email\n":
             source.readline()
-        return list(csv.DictReader(source))
+        #TODO: this is really ugly. pe.get_records supposedly has other input modes like file_content?
+        os.makedirs('temp', exist_ok=True)
+        with open('temp/temp.csv', 'w') as f:
+            f.write(source.read())
+        return pe.get_records(file_name='temp/temp.csv', auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
+        os.rm('temp.temp.csv')
+
+# https://stackoverflow.com/a/16840747/6036628
+def peek_line(f):
+    pos = f.tell()
+    line = f.readline()
+    f.seek(pos)
+    return line
 
 def getRowsNormalSingleSheetXLSX(sourceFileName, sheetname):
-    wb = openpyxl.load_workbook(filename=sourceFileName, read_only=True)
-    ws = None
-    for sheet in wb:
-        if sheet.title == sheetname:
-            ws = sheet
-            break
-    if ws == None:
-        raise Exception("sheet not found")
-    it = ws.values
-    header = it.__next__()
-    fieldnames = list(header)
-    return xlsxRows(fieldnames, it)
+    return pe.get_records(file_name=sourceFileName, sheet_name=sheetname, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
 
 def getRowsNormalMultiSheetXLSX(sourceFileName):
-    wb = openpyxl.load_workbook(filename=sourceFileName, read_only=True)
+    #TODO: probably terrible performance - loading whole book just to read sheet names
+    sheets = pe.get_book_dict(file_name=sourceFileName).keys()
     output = []
-    for ws in wb:
-        it = ws.values
-        header = it.__next__()
-        fieldnames = list(header)
-        rows = xlsxRows(fieldnames, it)
+    for sheetname in sheets:
+        rows = pe.get_records(file_name=sourceFileName, sheet_name=sheetname, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
         for row in rows:
-            row.update({"_sheetName": ws.title})
+            row.update({"_sheetName": sheetname})
         output += rows
     return output
 
 def getRowsRosterSingleSheetXLSX(sourceFileName, sheetname):
-    wb = openpyxl.load_workbook(filename=sourceFileName, read_only=True)
-    ws = None
-    for sheet in wb:
-        if sheet.title == sheetname:
-            ws = sheet
-            break
-    if ws == None:
-        raise Exception("sheet not found")
-
-    it = ws.values
-    fieldnames = ['Sec ID','PID','Student','Credits','College','Major','Level','Email']
-    foundHeader = False
-    for row in it:
-        if list(row) == fieldnames:
-            foundHeader = True
-            break
-    if not foundHeader:
-        raise Exception("roster header not found")
-
-    return xlsxRows(fieldnames, it)
-
-
-def xlsxRows(fieldnames, it):
-    rows = []
-    for row in it:
-        row = list(row)
-        if len(row) > len(fieldnames):
-            print("WARNING: row is longer than header")
-        if len(row) < len(fieldnames):
-            row = row + [None]*(len(fieldnames)-len(row))
-        rows.append(dict(zip(fieldnames, map(str, row))))
-    return rows
+    allRows = pe.get_array(file_name=sourceFileName, sheet_name=sheetname, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
+    idx = allRows.index(['Sec ID','PID','Student','Credits','College','Major','Level','Email'])
+    if idx == -1:
+        raise Exception("not a roster")
+    return pe.get_records(array=allRows[idx:])

@@ -34,13 +34,6 @@ filtersAndChecks = {
     'stripDenominator': lambda x: x.split('/')[0].strip()
 }
 
-# https://stackoverflow.com/a/16840747/6036628
-def peek_line(f):
-    pos = f.tell()
-    line = f.readline()
-    f.seek(pos)
-    return line
-
 # returns [(Student, [Grade])]
 def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
     rows = getRows(sourceFileName, assignmentConfigObj.get("isRoster", False), assignmentConfigObj.get("sheetName", None))

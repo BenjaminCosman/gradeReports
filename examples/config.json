@@ -6,9 +6,10 @@
         "Student ID": {"identifiesStudent": true, "onePerStudent": true, "filters": ["strip", "9char", "toUpper"]},
         "Clicker ID": {"identifiesStudent": true, "filters": ["strip", "remove#", "8char", "toUpper"]}
     },
-    "sources": {
-        "data/Roster.csv": {
-            "type": "UCSD Roster",
+    "sources": [
+        {
+            "file": "data/Roster.csv",
+            "isRoster": true,
             "attributes": {
                 "Email": "Email",
                 "PID": "Student ID",
@@ -16,17 +17,19 @@
             },
             "items": []
         },
-        "data/CSE20_Fall_2018_grades.csv": {
+        {
+            "file": "data/CSE20_Fall_2018_grades.csv",
             "attributes": {
                 "SID": "Student ID",
                 "Email": "Email"
             },
             "items": [
-                {"name": "HW-1", "scoreCol": "HW 1", "max_points": 32, "type": "homework", "filters": ["BlankTo0"]},
-                {"name": "HW-5", "scoreCol": "HW 5", "max_points": 38, "type": "homework", "filters": ["BlankTo0"]}
+                {"name": "HW-1", "scoreCol": "HW 1", "max_points": 32, "type": "homework", "filters": ["NoneTo0"]},
+                {"name": "HW-5", "scoreCol": "HW 5", "max_points": 38, "type": "homework", "filters": ["NoneTo0"]}
             ]
         },
-        "data/clickerRegistrations.csv": {
+        {
+            "file": "data/clickerRegistrations.csv",
             "attributes": {
                 "Email Address": "Email",
                 "Your PID": "Student ID",
@@ -34,7 +37,8 @@
             },
             "items": []
         },
-        "data/inClassClickersFinalBC_renamedCols.csv": {
+        {
+            "file": "data/inClassClickersFinalBC_renamedCols.csv",
             "attributes": {
                 "Remote ID": "Clicker ID"
             },
@@ -43,7 +47,8 @@
                 {"name": "11/30", "scoreCol": "11/30/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]}
             ]
         },
-        "data/Week1ReviewQuiz.csv": {
+        {
+            "file": "data/Week1ReviewQuiz.csv",
             "attributes": {
                 "Email Address": "Email",
                 "PID": "Student ID"
@@ -52,7 +57,7 @@
                 {"name": "Week1", "scoreCol": "Score", "max_points": 4, "type": "review-quiz", "filters": ["stripDenominator"], "due_date": "1/27/2019 23:53:24", "timestampCol": "Timestamp"}
             ]
         }
-    },
+    ],
     "outputs": {
         "report-name": "CSE105 Preliminary Grade Report",
         "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
