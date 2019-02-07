@@ -1,4 +1,4 @@
-import sys, os, csv, json, re
+import sys, os, csv, json, re, datetime
 import pdfkit
 import argparse
 import dateutil.parser
@@ -65,9 +65,16 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
                         raise hell
                     score = float(checkAndClean(score, assignment['filters']))
                     if "due_date" in assignment:
-                        dueDate = dateutil.parser.parse(assignment['due_date'])
-                        turninDate = dateutil.parser.parse(record[assignment['timestampCol']])
-                        if turninDate > dueDate:
+                        dueDatetime = dateutil.parser.parse(assignment['due_date'])
+                        turnedInStr = record[assignment['timestampCol']]
+                        try:
+                            turninDatetime = dateutil.parser.parse(turnedInStr)
+                        except ValueError:
+                            # Try reading as an xlsx timestamp instead
+                            # https://gist.github.com/erikvullings/825283249a5b4617d0f36bcba4fa8be8
+                            utcTime = (float(turnedInStr) - 25569) * 86400
+                            turninDatetime = datetime.datetime.utcfromtimestamp(utcTime)
+                        if turninDatetime > dueDatetime:
                             continue
                 grades[assignment[ASSIGNMENT_NAME_KEY]] = score
             outputList.append((studentInfo, grades))

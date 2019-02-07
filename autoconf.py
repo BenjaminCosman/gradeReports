@@ -1,7 +1,7 @@
 import json, os, csv, re, argparse, glob
 from enum import Enum
 # from xlsxReader import XLSXReader
-import openpyxl
+# import openpyxl
 from fileFormats import getRows
 # from JSONprinter import NoIndentEncoder, NoIndent
 
