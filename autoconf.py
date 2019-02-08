@@ -40,45 +40,16 @@ def inferTypeFromFields(fields):
     return FileType.OTHER
 
 def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
-    attrConfig = {}
-    itemConfig = []
-    ignoredCols = []
-    keywordLookup = {}
-    for attr in allAttrs:
-        if attr in keywords:
-            keywordLookup.update({keyword:attr for keyword in keywords[attr]})
-
     fields = rows[0].keys()
-
     if len(set(fields)) != len(fields):
         print(f"WARNING: duplicate column in {filename}")
 
-    for item in fields:
-        itemLowered = item.lower()
+    (attrConfig, ignoredCols) = guessAttrConfig(fields, allAttrs)
+    itemConfig = []
 
-        # First, check if the column name is referring to a student attribute
-        identifiedAttr = None
-        if itemLowered in [attr.lower() for attr in allAttrs]:
-            identifiedAttr = item
-        else:
-            # itemWords = itemLowered.split()
-            for (keyword, attr) in keywordLookup.items():
-                if re.search(keyword, itemLowered):
-                    identifiedAttr = attr
-                    break
-
-        # If so, record it and move on to next column
-        if identifiedAttr is not None:
-            if identifiedAttr in attrConfig.values():
-                print(f"WARNING: found two columns for attribute {identifiedAttr}")
-                ignoredCols.append(item)
-            elif allAttrs[identifiedAttr].get("identifiesStudent", False):
-                attrConfig.update({item: identifiedAttr})
-            else:
-                ignoredCols.append(item)
-        # Otherwise, assume it's an assignment grade (for 'other' filetypes only)
-        else:
-            if fileType == FileType.OTHER:
+    if fileType == FileType.OTHER:
+        for item in fields:
+            if item not in ignoredCols and item not in attrConfig.keys():
                 itemType = guessItemType(item)
                 itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType, "filters": ["NoneTo0", "NVto0"]})
 
@@ -111,6 +82,39 @@ def guessItemType(item):
         return "Homework"
     return "unknown"
 
+def guessAttrConfig(potentialAttrFields, allAttrs):
+    keywordLookup = {}
+    for attr in allAttrs:
+        if attr in keywords:
+            keywordLookup.update({keyword:attr for keyword in keywords[attr]})
+
+    attrConfig = {}
+    ignoredCols = []
+    for item in potentialAttrFields:
+        itemLowered = item.lower()
+
+        # First, check if the column name is referring to a student attribute
+        identifiedAttr = None
+        if itemLowered in [attr.lower() for attr in allAttrs]:
+            identifiedAttr = item
+        else:
+            # itemWords = itemLowered.split()
+            for (keyword, attr) in keywordLookup.items():
+                if re.search(keyword, itemLowered):
+                    identifiedAttr = attr
+                    break
+
+        # If so, record it and move on to next column
+        if identifiedAttr is not None:
+            if identifiedAttr in attrConfig.values():
+                print(f"WARNING: found two columns for attribute {identifiedAttr}")
+                ignoredCols.append(item)
+            elif allAttrs[identifiedAttr].get("identifiesStudent", False):
+                attrConfig.update({item: identifiedAttr})
+            else:
+                ignoredCols.append(item)
+    return (attrConfig, ignoredCols)
+
 def updateGradescopeConfig(allAttrs, sourceConf, rows):
     fields = rows[0].keys()
     assignments = []
@@ -121,47 +125,18 @@ def updateGradescopeConfig(allAttrs, sourceConf, rows):
         elif " - Max Points" not in field and " - Lateness" not in field:
             attrs.append(field)
 
-    attrConfig = {}
+    (attrConfig, ignoredCols) = guessAttrConfig(attrs, allAttrs)
+
     itemConfig = []
-    ignoredCols = []
-    keywordLookup = {}
-    for attr in allAttrs:
-        if attr in keywords:
-            keywordLookup.update({keyword:attr for keyword in keywords[attr]})
-
-    for item in attrs:
-        itemLowered = item.lower()
-        # First, check if the column name is referring to a student attribute
-        identifiedAttr = None
-        if itemLowered in [attr.lower() for attr in allAttrs]:
-            identifiedAttr = item
-        else:
-            for (keyword, attr) in keywordLookup.items():
-                if re.search(keyword, itemLowered):
-                    identifiedAttr = attr
-                    break
-        # If so, record it and move on to next column
-        if identifiedAttr is not None:
-            if identifiedAttr in attrConfig.values():
-                print(f"WARNING: found two columns for attribute {identifiedAttr}")
-                ignoredCols.append(item)
-            elif allAttrs[identifiedAttr].get("identifiesStudent", False):
-                attrConfig.update({item: identifiedAttr})
-            else:
-                ignoredCols.append(item)
-
     for item in assignments:
         itemType = guessItemType(item)
         maxPoints = int(rows[0][item + " - Max Points"])
         itemConfig.append({"name": item, "scoreCol": item, "max_points": maxPoints, "type": itemType, "filters": ["NoneTo0"]})
 
     sourceConf.update({
-        # "_autoconf_fileType": FileType.GRADESCOPE.name,
         "attributes": attrConfig,
         "items": itemConfig,
-        # "_autoconf_ignoredCols": ignoredCols
     })
-
 
 def updateConfig(globalConfigObj, sourceConf, rows):
     fileType = inferTypeFromFields(list(rows[0].keys()))
@@ -257,7 +232,7 @@ def main(sources, partialConfig, outfilename):
     for sourceData in globalConfigObj['sources']:
         for item in sourceData['items']:
             categories.add(item['type'])
-    globalConfigObj['outputs']['content'] = [{ "title": c, "from": c} for c in categories]
+    globalConfigObj['outputs']['content'] = [{ "title": f"<Rename me - display name of {c}>", "from": c} for c in categories]
 
     with open(outfilename, 'w') as outFile:
         s = json.dumps(globalConfigObj, indent=2, separators=(',', ': ')) # cls=NoIndentEncoder,
