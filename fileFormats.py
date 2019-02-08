@@ -32,11 +32,12 @@ def getRowsRosterCSV(sourceFileName):
         while peek_line(source) != "Sec ID,PID,Student,Credits,College,Major,Level,Email\n":
             source.readline()
         #TODO: this is really ugly. pe.get_records supposedly has other input modes like file_content?
-        os.makedirs('temp', exist_ok=True)
-        with open('temp/temp.csv', 'w') as f:
+        with open('tempTrimmedRoster.csv', 'w') as f:
             f.write(source.read())
-        return pe.get_records(file_name='temp/temp.csv', auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
-        os.rm('temp.temp.csv')
+        rows = pe.get_records(file_name='tempTrimmedRoster.csv', auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
+        os.remove('tempTrimmedRoster.csv')
+        return rows
+
 
 # https://stackoverflow.com/a/16840747/6036628
 def peek_line(f):

@@ -42,7 +42,7 @@
             },
             "items": [
                 {"name": "HW-1", "scoreCol": "HW 1", "max_points": 32, "type": "homework", "filters": ["NoneTo0"]},
-                {"name": "HW-2", "scoreCol": "HW 2", "max_points": 38, "type": "homework", "filters": ["NoneTo0"]}
+                {"name": "HW-2", "scoreCol": "HW 2", "max_points": 17, "type": "homework", "filters": ["NoneTo0"]}
             ]
         },
         {

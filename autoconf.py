@@ -154,7 +154,7 @@ def guessConfig(globalConfigObj, filename, fileType):
 def guessItemType(item):
     item = item.lower()
     if "hw" in item or "assignment" in item or "homework" in item:
-        return "homework"
+        return "Homework"
     return "unknown"
 
 def guessGradescopeConfig(globalConfigObj, filename):
