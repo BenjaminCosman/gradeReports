@@ -1,11 +1,11 @@
 import json, os, csv, re, argparse, glob
 from enum import Enum
+import pyexcel as pe
 # from xlsxReader import XLSXReader
 # import openpyxl
 from fileFormats import getRows
 # from JSONprinter import NoIndentEncoder, NoIndent
 
-# CONFIG_FILENAME = 'config.json'
 DEFAULT_DATA_DIR = 'data'
 OUTFILE = 'tempConfig.json'
 
@@ -36,8 +36,15 @@ def inferFormat(filename):
             else:
                 return FileFormat.CSV_OTHER
     elif ext == ".xlsx":
-        wb = openpyxl.load_workbook(filename=filename, read_only=True)
-        ws = wb.active
+        book = pe.get_book(file_name=filename, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
+        if book.number_of_sheets() > 1:
+            print("WARNING: autoconf does not yet handle multi-sheet xlsx")
+            return FileFormat.IGNORED
+        sheet = list(book.dict.values())[0]
+        print(sheet[0])
+        raise hell
+        # wb = openpyxl.load_workbook(filename=filename, read_only=True)
+        # ws = wb.active
         fields = ws.values.__next__()
         if fields == ('Sect ID', 'Course', 'Title', 'SecCode', 'Instructor'):
             return FileFormat.XLSX_ROSTER
@@ -212,13 +219,7 @@ def guessGradescopeConfig(globalConfigObj, filename):
     })
 
 
-
-
 def main(dataDir):
-    # if os.path.exists(CONFIG_FILENAME):
-    #     with open(CONFIG_FILENAME) as configFile:
-    #         globalConfigObj = json.load(configFile)
-    # else:
     globalConfigObj = {
         "studentAttributes": {
             "Roster Name": {"onePerStudent": True},
@@ -237,8 +238,10 @@ def main(dataDir):
 
     # newGlobalConfigObj = copy.deepcopy(globalConfigObj)
 
-    print("Searching `%s` for csv files..." % dataDir)
+    print("Searching `%s` for csv and xlsx files..." % dataDir)
     for filename in glob.iglob(os.path.join(dataDir,'**'), recursive=True):
+        if os.path.isdir(filename):
+            continue
         print("Found file `%s`" % filename)
         fileFormat = inferFormat(filename)
         if fileFormat == FileFormat.IGNORED:
@@ -277,7 +280,6 @@ def main(dataDir):
 
     with open(OUTFILE, 'w') as outFile:
         s = json.dumps(globalConfigObj, indent=2, separators=(',', ': ')) # cls=NoIndentEncoder,
-        # print(s)
         outFile.write(s)
         # json.dump(globalConfigObj, outFile, cls=NoIndentEncoder, indent=2, separators=(',', ': '))
         print(f"Wrote config file to `{OUTFILE}`")

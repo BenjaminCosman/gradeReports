@@ -1,3 +1,4 @@
 data/
 reports/
 .venv/
+tempConfig.json
