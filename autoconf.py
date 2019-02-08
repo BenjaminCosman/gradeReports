@@ -1,4 +1,4 @@
-import json, os, csv, re, argparse, glob
+import json, os, csv, re, argparse, glob, pathlib
 from enum import Enum
 import pyexcel as pe
 # from xlsxReader import XLSXReader
@@ -183,12 +183,12 @@ def updateConfig(globalConfigObj, sourceConf, rows):
     elif fileType in [FileType.SCORED_GOOGLE_FORM, FileType.UNSCORED_GOOGLE_FORM, FileType.OTHER]:
         updateOtherConfig(globalConfigObj['studentAttributes'], sourceConf, rows, fileType)
     else:
-        raise Exception("unknown filetype")
+        raise Exception(f"unknown filetype {fileType.name}")
 
     globalConfigObj["sources"].append(sourceConf)
 
 
-def main(dataDir, partialConfig, outfilename):
+def main(sources, partialConfig, outfilename):
     if partialConfig:
         with open(partialConfig) as f:
             globalConfigObj = json.load(f)
@@ -212,33 +212,45 @@ def main(dataDir, partialConfig, outfilename):
             "content": []
         }
 
-    ignoredFiles = globalConfigObj.get("_autoconf_ignoredFiles", [])
-    print("Searching `%s` for csv and xlsx files..." % dataDir)
-    for filename in glob.iglob(os.path.join(dataDir,'**'), recursive=True):
-        if os.path.isdir(filename):
-            continue
-        print("Found file `%s`" % filename)
-        if filename in ignoredFiles:
-            print("Skipping because of _autoconf_ignoredFiles")
-            continue
-        (_, ext) = os.path.splitext(filename)
-        if ext == ".csv":
-            rows = getRows(filename, False, None)
-            sourceConf = {"file": filename}
-            updateConfig(globalConfigObj, sourceConf, rows)
-        elif ext == ".xlsx":
-            book = pe.get_book(file_name=filename, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
-            for name in book.sheet_names():
-                print("Found sheet `%s`" % name)
-                if [filename, name] in ignoredFiles:
-                    print("Skipping because of _autoconf_ignoredFiles")
-                    continue
-                rows = getRows(filename, False, name)
-                sourceConf = {"file": filename, "sheetName": name}
-                updateConfig(globalConfigObj, sourceConf, rows)
+    # ignoredFiles = globalConfigObj.get("_autoconf_ignoredFiles", [])
+    preconfiguredFiles = map(getSource, globalConfigObj["sources"])
+    for source in sources:
+        if os.path.isdir(source):
+            print("Searching `%s` for csv and xlsx files..." % source)
+            sourceIter = glob.iglob(os.path.join(source,'**'), recursive=True)
         else:
-            print("Ignoring.")
-            continue
+            sourceIter = [source]
+        for filename in sourceIter:
+            if os.path.isdir(filename):
+                continue
+            print("Handling file `%s`" % filename)
+            # if filename in ignoredFiles:
+            #     print("Skipping because of _autoconf_ignoredFiles")
+            #     continue
+            if filename in preconfiguredFiles:
+                print("Skipping because file is already configured")
+                continue
+            ext = pathlib.Path(filename).suffix
+            if ext == ".csv":
+                rows = getRows(filename, False, None)
+                sourceConf = {"file": filename}
+                updateConfig(globalConfigObj, sourceConf, rows)
+            elif ext == ".xlsx":
+                book = pe.get_book(file_name=filename, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
+                for name in book.sheet_names():
+                    print("Found sheet `%s`" % name)
+                    # if [filename, name] in ignoredFiles:
+                    #     print("Skipping because of _autoconf_ignoredFiles")
+                    #     continue
+                    if [filename, name] in preconfiguredFiles:
+                        print("Skipping because file is already configured")
+                        continue
+                    rows = getRows(filename, False, name)
+                    sourceConf = {"file": filename, "sheetName": name}
+                    updateConfig(globalConfigObj, sourceConf, rows)
+            else:
+                print("Ignoring.")
+                continue
     globalConfigObj["sources"].sort(key=mySort, reverse=True)
 
     categories = set()
@@ -253,6 +265,13 @@ def main(dataDir, partialConfig, outfilename):
         # json.dump(globalConfigObj, outFile, cls=NoIndentEncoder, indent=2, separators=(',', ': '))
         print(f"Wrote config file to `{outfilename}`")
 
+def getSource(sourceObj):
+    filename = sourceObj["file"]
+    if "sheetname" in sourceObj:
+        return [filename, sourceObj["sheetname"]]
+    else:
+        return filename
+
 # TODO: remove dependency on order of sources - right now sources that define and
 # connect student attributes should come first (e.g. roster, then clicker registrations)
 def mySort(obj):
@@ -263,9 +282,9 @@ def mySort(obj):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('sourcesDir', metavar='SOURCES_DIR', type=str,
-        help='The folder containing your roster, grades, etc.')
-    parser.add_argument('-i', type=str, help='A partial config file to expand')
-    parser.add_argument('-o', type=str, help='Output file (default: tempConfig.json)', default='tempConfig.json')
+    parser.add_argument('sourcesDir', metavar='SOURCE', type=str, nargs='*',
+        help='A csv or xlsx source (roster, gradesheet, etc) or a directory containing such sources')
+    parser.add_argument('-i', metavar='CONFIG_FILE', type=str, help='An initial config file to add to')
+    parser.add_argument('-o', metavar='OUTPUT_FILE', type=str, help='Output file (default: tempConfig.json)', default='tempConfig.json')
     args = parser.parse_args()
     main(args.sourcesDir, args.i, args.o)
