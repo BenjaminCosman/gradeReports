@@ -6,9 +6,6 @@ import pyexcel as pe
 from fileFormats import getRows
 # from JSONprinter import NoIndentEncoder, NoIndent
 
-DEFAULT_DATA_DIR = 'data'
-OUTFILE = 'tempConfig.json'
-
 FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM OTHER')
 
 keywords = {
@@ -191,30 +188,39 @@ def updateConfig(globalConfigObj, sourceConf, rows):
     globalConfigObj["sources"].append(sourceConf)
 
 
-def main(dataDir):
-    globalConfigObj = {
-        "studentAttributes": {
+def main(dataDir, partialConfig, outfilename):
+    if partialConfig:
+        with open(partialConfig) as f:
+            globalConfigObj = json.load(f)
+    else:
+        globalConfigObj = {}
+
+    if "studentAttributes" not in globalConfigObj:
+        globalConfigObj["studentAttributes"] = {
             "Roster Name": {"onePerStudent": True},
             "Section": {"onePerStudent": True},
             "Email": {},
             "Student ID": {"identifiesStudent": True, "onePerStudent": True, "filters": ["strip", "toUpper", "ucsdIDCheck"]},
             "Clicker ID": {"identifiesStudent": True, "filters": ["strip", "remove#", "8char", "toUpper"]}
-        },
-        "sources": [],
-        "outputs": {
+        }
+    if "sources" not in globalConfigObj:
+        globalConfigObj["sources"] = []
+    if "outputs" not in globalConfigObj:
+        globalConfigObj["outputs"] = {
             "report-name": "CSEnn Grade Report",
             "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
             "content": []
         }
-    }
 
-    # newGlobalConfigObj = copy.deepcopy(globalConfigObj)
-
+    ignoredFiles = globalConfigObj.get("_autoconf_ignoredFiles", [])
     print("Searching `%s` for csv and xlsx files..." % dataDir)
     for filename in glob.iglob(os.path.join(dataDir,'**'), recursive=True):
         if os.path.isdir(filename):
             continue
         print("Found file `%s`" % filename)
+        if filename in ignoredFiles:
+            print("Skipping because of _autoconf_ignoredFiles")
+            continue
         (_, ext) = os.path.splitext(filename)
         if ext == ".csv":
             rows = getRows(filename, False, None)
@@ -224,6 +230,9 @@ def main(dataDir):
             book = pe.get_book(file_name=filename, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
             for name in book.sheet_names():
                 print("Found sheet `%s`" % name)
+                if [filename, name] in ignoredFiles:
+                    print("Skipping because of _autoconf_ignoredFiles")
+                    continue
                 rows = getRows(filename, False, name)
                 sourceConf = {"file": filename, "sheetName": name}
                 updateConfig(globalConfigObj, sourceConf, rows)
@@ -238,11 +247,11 @@ def main(dataDir):
             categories.add(item['type'])
     globalConfigObj['outputs']['content'] = [{ "title": c, "from": c} for c in categories]
 
-    with open(OUTFILE, 'w') as outFile:
+    with open(outfilename, 'w') as outFile:
         s = json.dumps(globalConfigObj, indent=2, separators=(',', ': ')) # cls=NoIndentEncoder,
         outFile.write(s)
         # json.dump(globalConfigObj, outFile, cls=NoIndentEncoder, indent=2, separators=(',', ': '))
-        print(f"Wrote config file to `{OUTFILE}`")
+        print(f"Wrote config file to `{outfilename}`")
 
 # TODO: remove dependency on order of sources - right now sources that define and
 # connect student attributes should come first (e.g. roster, then clicker registrations)
@@ -254,8 +263,9 @@ def mySort(obj):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('sourcesDir', metavar='SOURCES_DIR', type=str, #nargs='?',
-        help='The folder containing your roster, grades, etc.',# Default: `data`',
-        default=DEFAULT_DATA_DIR)
+    parser.add_argument('sourcesDir', metavar='SOURCES_DIR', type=str,
+        help='The folder containing your roster, grades, etc.')
+    parser.add_argument('-i', type=str, help='A partial config file to expand')
+    parser.add_argument('-o', type=str, help='Output file (default: tempConfig.json)', default='tempConfig.json')
     args = parser.parse_args()
-    main(args.sourcesDir)
+    main(args.sourcesDir, args.i, args.o)
