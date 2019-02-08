@@ -165,6 +165,7 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj)
     disclaimer_str = f"<div>{outputConfigObj['disclaimer-text']}</div>"
     assignments_str = get_assignmenthtml(studentData, allAssignments, outputConfigObj)
     total_str = f'{header_str} {disclaimer_str} <table style="width:100%"><tr><td valign="top" width="33%"> {assignments_str} </td></tr></table></body></html>'
+    os.makedirs('./reports', exist_ok=True)
     f = open(f'./reports/{studentIdentifier}.html','w')
     f.write(total_str)
     f.close()
