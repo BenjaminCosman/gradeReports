@@ -65,4 +65,4 @@ def getRowsRosterSingleSheetXLSX(sourceFileName, sheetname):
     idx = allRows.index(['Sec ID','PID','Student','Credits','College','Major','Level','Email'])
     if idx == -1:
         raise Exception("not a roster")
-    return pe.get_records(array=allRows[idx:])
+    return pe.get_records(array=allRows[idx:], auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)

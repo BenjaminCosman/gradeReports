@@ -10,7 +10,7 @@
         {
             "file": "data/CSE105Wi19Roster.xlsx",
             "isRoster": true,
-            "sheetName": "1.11.19",
+            "sheetName": "1.23.19",
 
             "attributes": {
                 "Email": "Email",
@@ -28,6 +28,22 @@
                 "Enter your remote ID, preceded by a hashtag symbol (#)": "Clicker ID"
             },
             "items": []
+        },
+        {
+            "file": "data/Clickers/LecAClickersCSE105Wi19.1.23.19.csv",
+
+            "attributes": {
+                "Student ID": "Student ID",
+                "Remote ID": "Clicker ID"
+            },
+            "items": [
+                {"name": "Jan 9", "scoreCol": "Session 1 Total 1/9/19", "max_points": 1, "type": "clickers", "filters": ["NVto0"]},
+                {"name": "Jan 11", "scoreCol": "Session 2 Total 1/11/19", "max_points": 1, "type": "clickers", "filters": ["NVto0"]},
+                {"name": "Jan 14", "scoreCol": "Session 3 Total 1/14/19", "max_points": 1, "type": "clickers", "filters": ["NVto0"]},
+                {"name": "Jan 16", "scoreCol": "Session 4 Total 1/16/19", "max_points": 1, "type": "clickers", "filters": ["NVto0"]},
+                {"name": "Jan 18", "scoreCol": "Session 5 Total 1/18/19", "max_points": 1, "type": "clickers", "filters": ["NVto0"]},
+                {"name": "Jan 23", "scoreCol": "Session 6 Total 1/23/19", "max_points": 1, "type": "clickers", "filters": ["NVto0"]}
+            ]
         },
         {
             "file": "data/QuizResponsesCSE105Wi19.xlsx",
@@ -77,18 +93,6 @@
                 {"name": "Week 1", "scoreCol": "Week 1", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]},
                 {"name": "Week 2", "scoreCol": "Week 2", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]},
                 {"name": "Week 3", "scoreCol": "Week 3", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]}
-            ]
-        },
-        {
-            "file": "data/Clickers/LecAClickersCSE105Wi19.1.23.19.csv",
-
-            "attributes": {
-                "Student ID": "Student ID",
-                "Remote ID": "Clicker ID"
-            },
-            "items": [
-                {"name": "Jan 9", "scoreCol": "Session 1 Total 1/9/19", "max_points": 1, "type": "clickers", "filters": ["NVto0"]},
-                {"name": "Jan 11", "scoreCol": "Session 2 Total 1/11/19", "max_points": 1, "type": "clickers", "filters": ["NVto0"]}
             ]
         }
     ],

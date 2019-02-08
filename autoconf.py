@@ -9,8 +9,7 @@ from fileFormats import getRows
 DEFAULT_DATA_DIR = 'data'
 OUTFILE = 'tempConfig.json'
 
-FileFormat = Enum('FileFormat', 'CSV_UCSD_ROSTER CSV_OTHER XLSX_ROSTER XLSX_OTHER, IGNORED')
-FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM OTHER IGNORED')
+FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM OTHER')
 
 keywords = {
     "Roster Name": [r'name\b'],
@@ -25,59 +24,10 @@ keywords = {
     # "test": [r'\btest\b'],
 }
 
-def inferFormat(filename):
-    (_, ext) = os.path.splitext(filename)
-    if ext == ".csv":
-        with open(filename) as f:
-            reader = csv.DictReader(f)
-            fields = reader.fieldnames
-            if fields[:5] == ['Sect ID', 'Course', 'Title', 'SecCode', 'Instructor']:
-                return FileFormat.CSV_UCSD_ROSTER
-            else:
-                return FileFormat.CSV_OTHER
-    elif ext == ".xlsx":
-        book = pe.get_book(file_name=filename, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
-        if book.number_of_sheets() > 1:
-            print("WARNING: autoconf does not yet handle multi-sheet xlsx")
-            return FileFormat.IGNORED
-        sheet = list(book.dict.values())[0]
-        print(sheet[0])
-        raise hell
-        # wb = openpyxl.load_workbook(filename=filename, read_only=True)
-        # ws = wb.active
-        fields = ws.values.__next__()
-        if fields == ('Sect ID', 'Course', 'Title', 'SecCode', 'Instructor'):
-            return FileFormat.XLSX_ROSTER
-        else:
-            return FileFormat.XLSX_OTHER
-    else:
-        return FileFormat.IGNORED
-
-def inferType(filename, fileFormat):
-    if fileFormat == FileFormat.XLSX_OTHER:
-        pass#TODO
-    (_, ext) = os.path.splitext(filename)
-    if ext in [".csv", ".xlsx"]:
-        fields = getFields(filename)
-        return inferTypeFromFields(fields)
-    else:
-        return FileType.IGNORED
-
-def getFields(filename):
-    (_, ext) = os.path.splitext(filename)
-    if ext == ".csv":
-        with open(filename) as f:
-            reader = csv.DictReader(f)
-            return reader.fieldnames
-    elif ext == ".xlsx":
-        wb = openpyxl.load_workbook(filename=filename, read_only=True)
-        ws = wb.active
-        it = ws.values
-        return it.__next__()
-    else:
-        raise Exception("bad file type")
-
 def inferTypeFromFields(fields):
+    if fields[:5] == ['Sect ID', 'Course', 'Title', 'SecCode', 'Instructor']:
+        return FileType.ROSTER
+
     lastCol = ""
     for col in fields:
         if col == lastCol + " - Max Points":
@@ -92,66 +42,66 @@ def inferTypeFromFields(fields):
 
     return FileType.OTHER
 
-def guessConfig(globalConfigObj, filename, fileType):
+def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
     attrConfig = {}
     itemConfig = []
     ignoredCols = []
-    allAttrs = globalConfigObj['studentAttributes']
     keywordLookup = {}
     for attr in allAttrs:
         if attr in keywords:
             keywordLookup.update({keyword:attr for keyword in keywords[attr]})
 
-    fields = getFields(filename)
+    fields = rows[0].keys()
 
     if len(set(fields)) != len(fields):
         print(f"WARNING: duplicate column in {filename}")
 
-    if fileType in [FileType.OTHER, FileType.SCORED_GOOGLE_FORM, FileType.UNSCORED_GOOGLE_FORM]:
-        for item in fields:
-            itemLowered = item.lower()
+    for item in fields:
+        itemLowered = item.lower()
 
-            # First, check if the column name is referring to a student attribute
-            identifiedAttr = None
-            if itemLowered in [attr.lower() for attr in allAttrs]:
-                identifiedAttr = item
-            else:
-                # itemWords = itemLowered.split()
-                for (keyword, attr) in keywordLookup.items():
-                    if re.search(keyword, itemLowered):
-                        identifiedAttr = attr
-                        break
+        # First, check if the column name is referring to a student attribute
+        identifiedAttr = None
+        if itemLowered in [attr.lower() for attr in allAttrs]:
+            identifiedAttr = item
+        else:
+            # itemWords = itemLowered.split()
+            for (keyword, attr) in keywordLookup.items():
+                if re.search(keyword, itemLowered):
+                    identifiedAttr = attr
+                    break
 
-            # If so, record it and move on to next column
-            if identifiedAttr is not None:
-                if identifiedAttr in attrConfig.values():
-                    print(f"WARNING: found two columns for attribute {identifiedAttr}")
-                    ignoredCols.append(item)
-                elif allAttrs[identifiedAttr].get("identifiesStudent", False):
-                    attrConfig.update({item: identifiedAttr})
-                else:
-                    ignoredCols.append(item)
-            # Otherwise, assume it's an assignment grade (for 'other' filetypes only)
+        # If so, record it and move on to next column
+        if identifiedAttr is not None:
+            if identifiedAttr in attrConfig.values():
+                print(f"WARNING: found two columns for attribute {identifiedAttr}")
+                ignoredCols.append(item)
+            elif allAttrs[identifiedAttr].get("identifiesStudent", False):
+                attrConfig.update({item: identifiedAttr})
             else:
-                if fileType == FileType.OTHER:
-                    itemType = guessItemType(item)
-                    itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType, "filters": ["NoneTo0", "NVto0"]})
+                ignoredCols.append(item)
+        # Otherwise, assume it's an assignment grade (for 'other' filetypes only)
+        else:
+            if fileType == FileType.OTHER:
+                itemType = guessItemType(item)
+                itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType, "filters": ["NoneTo0", "NVto0"]})
 
     if fileType == FileType.SCORED_GOOGLE_FORM:
-        rows = getRows(filename, False, None)
         row = rows[0]
         score = row['Score']
-        print(row)
-        maxPoints = int(score.split('/')[1].strip())
-        name = os.path.splitext(os.path.basename(filename))[0]
+        if '/' in score:
+            maxPoints = int(score.split('/')[1].strip())
+            filters = ["stripDenominator"]
+        else:
+            maxPoints = max([float(x['Score']) for x in rows])
+            filters = []
+        name = sourceConf.get("sheetName", os.path.basename(sourceConf['file']))
         itemConfig.append({"name": name, "scoreCol": "Score", "max_points": maxPoints, "type": fileType.name, "filters": ["stripDenominator"], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
     if fileType == FileType.UNSCORED_GOOGLE_FORM:
-        name = os.path.splitext(os.path.basename(filename))[0]
+        name = sourceConf.get("sheetName", os.path.basename(sourceConf['file']))
         itemConfig.append({"name": name, "scoreCol": False, "max_points": 1, "type": fileType.name, "filters": [], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
-    globalConfigObj["sources"].append({
-        "file": filename,
+    sourceConf.update({
         # "_autoconf_fileType": fileType.name,
         "attributes": attrConfig,
         "items": itemConfig, #[NoIndent(x) for x in itemConfig],
@@ -164,9 +114,8 @@ def guessItemType(item):
         return "Homework"
     return "unknown"
 
-def guessGradescopeConfig(globalConfigObj, filename):
-    row = getRows(filename, False, None)[0]
-    fields = row.keys()
+def updateGradescopeConfig(allAttrs, sourceConf, rows):
+    fields = rows[0].keys()
     assignments = []
     attrs = []
     for field in fields:
@@ -178,7 +127,6 @@ def guessGradescopeConfig(globalConfigObj, filename):
     attrConfig = {}
     itemConfig = []
     ignoredCols = []
-    allAttrs = globalConfigObj['studentAttributes']
     keywordLookup = {}
     for attr in allAttrs:
         if attr in keywords:
@@ -207,16 +155,40 @@ def guessGradescopeConfig(globalConfigObj, filename):
 
     for item in assignments:
         itemType = guessItemType(item)
-        maxPoints = int(row[item + " - Max Points"])
+        maxPoints = int(rows[0][item + " - Max Points"])
         itemConfig.append({"name": item, "scoreCol": item, "max_points": maxPoints, "type": itemType, "filters": ["NoneTo0"]})
 
-    globalConfigObj["sources"].append({
-        "file": filename,
+    sourceConf.update({
         # "_autoconf_fileType": FileType.GRADESCOPE.name,
         "attributes": attrConfig,
         "items": itemConfig,
         # "_autoconf_ignoredCols": ignoredCols
     })
+
+
+def updateConfig(globalConfigObj, sourceConf, rows):
+    fileType = inferTypeFromFields(list(rows[0].keys()))
+    print("Inferred file type: %s" % fileType.name)
+    if fileType == FileType.ROSTER:
+        # It's not a proper csv; more like 2 on top of each other.
+        # It gets a special flag in config
+        sourceConf.update({
+            "isRoster": True,
+            "attributes": {
+                "Email": "Email",
+                "PID": "Student ID",
+                "Student": "Roster Name"
+            },
+            "items": []
+        })
+    elif fileType == FileType.GRADESCOPE:
+        updateGradescopeConfig(globalConfigObj['studentAttributes'], sourceConf, rows)
+    elif fileType in [FileType.SCORED_GOOGLE_FORM, FileType.UNSCORED_GOOGLE_FORM, FileType.OTHER]:
+        updateOtherConfig(globalConfigObj['studentAttributes'], sourceConf, rows, fileType)
+    else:
+        raise Exception("unknown filetype")
+
+    globalConfigObj["sources"].append(sourceConf)
 
 
 def main(dataDir):
@@ -243,33 +215,21 @@ def main(dataDir):
         if os.path.isdir(filename):
             continue
         print("Found file `%s`" % filename)
-        fileFormat = inferFormat(filename)
-        if fileFormat == FileFormat.IGNORED:
-            print("Ignoring.")
-            continue
-        if fileFormat in [FileFormat.CSV_UCSD_ROSTER, FileFormat.XLSX_ROSTER]:
-            print("Using default ROSTER config")
-            # The UCSD roster is not a proper csv (more like 2 on top of each other)
-            obj = {
-                "file": filename,
-                "isRoster": True,
-                "attributes": {
-                    "Email": "Email",
-                    "PID": "Student ID",
-                    "Student": "Roster Name"
-                },
-                "items": []
-            }
-            globalConfigObj["sources"].append(obj)
-            continue
-        fileType = inferType(filename, fileFormat)
-        print("Inferred file type: %s" % fileType.name)
-        if fileType == FileType.IGNORED:
-            print("Ignoring.")
-        elif fileType == FileType.GRADESCOPE:
-            guessGradescopeConfig(globalConfigObj, filename)
+        (_, ext) = os.path.splitext(filename)
+        if ext == ".csv":
+            rows = getRows(filename, False, None)
+            sourceConf = {"file": filename}
+            updateConfig(globalConfigObj, sourceConf, rows)
+        elif ext == ".xlsx":
+            book = pe.get_book(file_name=filename, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
+            for name in book.sheet_names():
+                print("Found sheet `%s`" % name)
+                rows = getRows(filename, False, name)
+                sourceConf = {"file": filename, "sheetName": name}
+                updateConfig(globalConfigObj, sourceConf, rows)
         else:
-            guessConfig(globalConfigObj, filename, fileType)
+            print("Ignoring.")
+            continue
     globalConfigObj["sources"].sort(key=mySort, reverse=True)
 
     categories = set()
