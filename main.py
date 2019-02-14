@@ -36,10 +36,11 @@ filtersAndChecks = {
 }
 
 # returns [(Student, [Grade])]
-def sourceToGrades(sourcePath, assignmentConfigObj, studentAttrDict):
-    rows = getRows(sourcePath, assignmentConfigObj.get("isRoster", False), assignmentConfigObj.get("sheetName", None))
-    identDict = assignmentConfigObj["attributes"]
-    sourceConfigReader = assignmentConfigObj["items"]
+def sourceToGrades(sourceConfigObj, studentAttrDict):
+    sourcePath = Path(sourceConfigObj['file'])
+    rows = getRows(sourcePath, sourceConfigObj.get("isRoster", False), sourceConfigObj.get("sheetName", None))
+    identDict = sourceConfigObj["attributes"]
+    sourceConfigReader = sourceConfigObj["items"]
     outputList = []
     for record in rows:
         try:
@@ -55,8 +56,7 @@ def sourceToGrades(sourcePath, assignmentConfigObj, studentAttrDict):
 
                 scoreCol = assignment.get('scoreCol', None)
                 if scoreCol == None:
-                    # If no score column, then full credit for completion
-                    # (as measured by being in the spreadsheet at all)
+                    # Full credit for completion (i.e. being in the spreadsheet at all)
                     score = assignment['max_points']
                 else:
                     try:
@@ -165,7 +165,7 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj)
         {clickerIDtext}</h2><body>"""
     disclaimer_str = f"<div>{outputConfigObj['disclaimer-text']}</div>"
     assignments_str = get_assignmenthtml(studentData, allAssignments, outputConfigObj)
-    total_str = f'{header_str} {disclaimer_str} <table style="width:100%"><tr><td valign="top" width="33%"> {assignments_str} </td></tr></table></body></html>'
+    total_str = f'{header_str} {disclaimer_str} {assignments_str}</body></html>'
     reportsDir = Path('reports')
     reportsDir.mkdir(exist_ok=True)
     reportPath = reportsDir / f'{studentIdentifier}.html'
@@ -208,8 +208,7 @@ def main(globalConfigObj):
             allAssignments[assignmentData["name"]] = assignmentData
 
     for obj in sourceConfigList:
-        sourcePath = Path(obj['file'])
-        data = sourceToGrades(sourcePath, obj, studentAttrDict)
+        data = sourceToGrades(obj, studentAttrDict)
         for (studentInfo, grades) in data:
             try:
                 studentID = getStudentID(studentAttrDict, primaryAttr, roster, studentInfo)
@@ -221,8 +220,8 @@ def main(globalConfigObj):
             except UnidentifiableStudentException:
                 print(f"WARNING: could not identify student ({studentInfo})")
 
-    for (k,v) in roster[primaryAttr].items():
-        printReport(k, v, allAssignments, globalConfigObj["outputs"])
+    for (studentIdentifier, studentData) in roster[primaryAttr].items():
+        printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
