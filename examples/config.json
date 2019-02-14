@@ -31,8 +31,12 @@
                 "Remote ID": "Clicker ID"
             },
             "items": [
-                {"name": "12/7", "scoreCol": "12/7/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
-                {"name": "12/5", "scoreCol": "12/5/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]}
+                {"name": "10/1", "scoreCol": "10/1/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
+                {"name": "10/3", "scoreCol": "10/3/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
+                {"name": "10/5", "scoreCol": "10/5/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
+                {"name": "10/8", "scoreCol": "10/8/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
+                {"name": "10/10", "scoreCol": "10/10/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
+                {"name": "10/12", "scoreCol": "10/12/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]}
             ]
         },
         {
@@ -51,9 +55,19 @@
                 "PID": "Student ID"
             },
             "items": [
-                {"name": "Week1", "scoreCol": "Score", "max_points": 2, "type": "review-quiz", "filters": ["stripDenominator"], "due_date": "1/27/2019 23:53:24", "timestampCol": "Timestamp"}
+                {"name": "Week1", "scoreCol": "Score", "max_points": 2, "type": "review-quiz", "filters": ["stripDenominator"], "due_date": "10/3/2018 23:59:59", "timestampCol": "Timestamp"}
+            ]
+        },
+        {
+            "file": "examples/data/Week2ReviewQuiz.csv",
+            "attributes": {
+                "PID": "Student ID"
+            },
+            "items": [
+                {"name": "Week2", "scoreCol": "Score", "max_points": 2, "type": "review-quiz", "filters": ["stripDenominator"], "due_date": "10/10/2018 23:59:59", "timestampCol": "Timestamp"}
             ]
         }
+
     ],
     "outputs": {
         "report-name": "CSE777 Preliminary Grade Report",
