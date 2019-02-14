@@ -1,6 +1,8 @@
 import csv, sys, os
 import pyexcel as pe
 
+__all__ = ['getRows']
+
 # Dispatches to one of the functions below
 def getRows(sourceFileName, isRoster, sheetName):
     (_, ext) = os.path.splitext(sourceFileName)
@@ -29,22 +31,11 @@ def getRowsNormalCSV(sourceFileName):
 
 def getRowsRosterCSV(sourceFileName):
     with open(sourceFileName) as source:
-        while peek_line(source) != "Sec ID,PID,Student,Credits,College,Major,Level,Email\n":
-            source.readline()
-        #TODO: this is really ugly. pe.get_records supposedly has other input modes like file_content?
-        with open('tempTrimmedRoster.csv', 'w') as f:
-            f.write(source.read())
-        rows = pe.get_records(file_name='tempTrimmedRoster.csv', auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
-        os.remove('tempTrimmedRoster.csv')
-        return rows
-
-
-# https://stackoverflow.com/a/16840747/6036628
-def peek_line(f):
-    pos = f.tell()
-    line = f.readline()
-    f.seek(pos)
-    return line
+        contents = source.read()
+    idx = contents.index("Sec ID,PID,Student,Credits,College,Major,Level,Email\n")
+    contents = contents[idx:]
+    rows = pe.get_records(file_content=contents, file_type='csv', auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
+    return rows
 
 def getRowsNormalSingleSheetXLSX(sourceFileName, sheetname):
     return pe.get_records(file_name=sourceFileName, sheet_name=sheetname, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)

@@ -53,9 +53,11 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
                 sheetName = assignment.get('sheetName', None)
                 if (sheetName != None) and (record['_sheetName'] != sheetName):
                     continue
-                scoreCol = assignment['scoreCol']
-                # Check for special value denoting scored-for-completion
-                if scoreCol == False:
+
+                scoreCol = assignment.get('scoreCol', None)
+                if scoreCol == None:
+                    # If no score column, then full credit for completion
+                    # (as measured by being in the spreadsheet at all)
                     score = assignment['max_points']
                 else:
                     try:
@@ -64,18 +66,18 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
                         print(assignment, sourceFileName, sheetName, record)
                         raise hell
                     score = float(checkAndClean(score, assignment['filters']))
-                    if "due_date" in assignment:
-                        dueDatetime = dateutil.parser.parse(assignment['due_date'])
-                        turnedInStr = record[assignment['timestampCol']]
-                        try:
-                            turninDatetime = dateutil.parser.parse(turnedInStr)
-                        except ValueError:
-                            # Try reading as an xlsx timestamp instead
-                            # https://gist.github.com/erikvullings/825283249a5b4617d0f36bcba4fa8be8
-                            utcTime = (float(turnedInStr) - 25569) * 86400
-                            turninDatetime = datetime.datetime.utcfromtimestamp(utcTime)
-                        if turninDatetime > dueDatetime:
-                            continue
+                if "due_date" in assignment:
+                    dueDatetime = dateutil.parser.parse(assignment['due_date'])
+                    turnedInStr = record[assignment['timestampCol']]
+                    try:
+                        turninDatetime = dateutil.parser.parse(turnedInStr)
+                    except ValueError:
+                        # Try reading as an xlsx timestamp instead
+                        # https://gist.github.com/erikvullings/825283249a5b4617d0f36bcba4fa8be8
+                        utcTime = (float(turnedInStr) - 25569) * 86400
+                        turninDatetime = datetime.datetime.utcfromtimestamp(utcTime)
+                    if turninDatetime > dueDatetime:
+                        continue
                 grades[assignment[ASSIGNMENT_NAME_KEY]] = score
             outputList.append((studentInfo, grades))
         except IncorrectFormatException:
@@ -166,9 +168,8 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj)
     assignments_str = get_assignmenthtml(studentData, allAssignments, outputConfigObj)
     total_str = f'{header_str} {disclaimer_str} <table style="width:100%"><tr><td valign="top" width="33%"> {assignments_str} </td></tr></table></body></html>'
     os.makedirs('./reports', exist_ok=True)
-    f = open(f'./reports/{studentIdentifier}.html','w')
-    f.write(total_str)
-    f.close()
+    with open(f'./reports/{studentIdentifier}.html','w') as f:
+        f.write(total_str)
 
     # Convert html report to pdf report
     # pdfkit.from_file(f'./reports/{studentIdentifier}.html', f'./reports/{studentIdentifier}.pdf')
@@ -228,8 +229,7 @@ def main(configFilename):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('filename', metavar='CONFIG_FILE', type=str, #nargs='?',
-        help='The .json file describing your class.',# Default: `config.json`',
-        default=DEFAULT_CONFIG_FILENAME)
+    parser.add_argument('filename', metavar='CONFIG_FILE', type=str,
+        help='The .json file describing your class.')
     args = parser.parse_args()
     main(args.filename)

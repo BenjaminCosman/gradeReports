@@ -2,7 +2,6 @@ import json, os, csv, re, argparse, glob, pathlib
 from enum import Enum
 import pyexcel as pe
 # from xlsxReader import XLSXReader
-# import openpyxl
 from fileFormats import getRows
 # from JSONprinter import NoIndentEncoder, NoIndent
 
@@ -24,6 +23,9 @@ keywords = {
 def inferTypeFromFields(fields):
     if fields[:5] == ['Sect ID', 'Course', 'Title', 'SecCode', 'Instructor']:
         return FileType.ROSTER
+
+    # if fields[:4] == ['Last Name', 'First Name', 'Student ID', 'Remote ID'] and any([re.match(r'^Session \d+ Total', field) for field in fields]):
+    #     return FileType.CLICKERS
 
     lastCol = ""
     for col in fields:
@@ -140,7 +142,7 @@ def updateGradescopeConfig(allAttrs, sourceConf, rows):
 
 def updateConfig(globalConfigObj, sourceConf, rows):
     fileType = inferTypeFromFields(list(rows[0].keys()))
-    print("Inferred file type: %s" % fileType.name)
+    print("\tInferred type: %s" % fileType.name)
     if fileType == FileType.ROSTER:
         # It's not a proper csv; more like 2 on top of each other.
         # It gets a special flag in config
