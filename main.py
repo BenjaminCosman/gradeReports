@@ -1,14 +1,13 @@
-import sys, os, csv, json, re, datetime
+import json, re, datetime
 import pdfkit
 import argparse
 import dateutil.parser
-from fileFormats import getRows
+from pathlib import Path
 
-DEFAULT_CONFIG_FILENAME = 'config.json'
+from fileFormats import getRows
 
 GRADES_KEY = 'Grades'
 INFO_KEY = 'Info'
-ASSIGNMENT_NAME_KEY = 'name'
 
 def checkAndClean(s, filters):
     for f in filters:
@@ -37,8 +36,8 @@ filtersAndChecks = {
 }
 
 # returns [(Student, [Grade])]
-def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
-    rows = getRows(sourceFileName, assignmentConfigObj.get("isRoster", False), assignmentConfigObj.get("sheetName", None))
+def sourceToGrades(sourcePath, assignmentConfigObj, studentAttrDict):
+    rows = getRows(sourcePath, assignmentConfigObj.get("isRoster", False), assignmentConfigObj.get("sheetName", None))
     identDict = assignmentConfigObj["attributes"]
     sourceConfigReader = assignmentConfigObj["items"]
     outputList = []
@@ -63,7 +62,7 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
                     try:
                         score = record[scoreCol]
                     except:
-                        print(assignment, sourceFileName, sheetName, record)
+                        print(assignment, str(sourcePath), sheetName, record)
                         raise hell
                     score = float(checkAndClean(score, assignment['filters']))
                 if "due_date" in assignment:
@@ -78,10 +77,10 @@ def sourceToGrades(sourceFileName, assignmentConfigObj, studentAttrDict):
                         turninDatetime = datetime.datetime.utcfromtimestamp(utcTime)
                     if turninDatetime > dueDatetime:
                         continue
-                grades[assignment[ASSIGNMENT_NAME_KEY]] = score
+                grades[assignment['name']] = score
             outputList.append((studentInfo, grades))
         except IncorrectFormatException:
-            print(f"WARNING: in file {sourceFileName}, invalid value for {internalName}: '{identVal}'")
+            print(f"WARNING: in file {sourcePath}, invalid value for {internalName}: '{identVal}'")
     return outputList
 
 def findPrimaryAttr(attrDict):
@@ -167,9 +166,10 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj)
     disclaimer_str = f"<div>{outputConfigObj['disclaimer-text']}</div>"
     assignments_str = get_assignmenthtml(studentData, allAssignments, outputConfigObj)
     total_str = f'{header_str} {disclaimer_str} <table style="width:100%"><tr><td valign="top" width="33%"> {assignments_str} </td></tr></table></body></html>'
-    os.makedirs('./reports', exist_ok=True)
-    with open(f'./reports/{studentIdentifier}.html','w') as f:
-        f.write(total_str)
+    reportsDir = Path('reports')
+    reportsDir.mkdir(exist_ok=True)
+    reportPath = reportsDir / f'{studentIdentifier}.html'
+    reportPath.write_text(total_str)
 
     # Convert html report to pdf report
     # pdfkit.from_file(f'./reports/{studentIdentifier}.html', f'./reports/{studentIdentifier}.pdf')
@@ -188,10 +188,7 @@ def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
                 html_str += f"{prefix} {ogscore} </p>"
     return html_str
 
-def main(configFilename):
-    with open(args.filename) as configFile:
-        globalConfigObj = json.load(configFile)
-
+def main(globalConfigObj):
     studentAttrDict = globalConfigObj["studentAttributes"]
     # Canonicalize with defaults
     for (k,v) in studentAttrDict.items():
@@ -211,8 +208,8 @@ def main(configFilename):
             allAssignments[assignmentData["name"]] = assignmentData
 
     for obj in sourceConfigList:
-        sourceFilename = obj['file']
-        data = sourceToGrades(sourceFilename, obj, studentAttrDict)
+        sourcePath = Path(obj['file'])
+        data = sourceToGrades(sourcePath, obj, studentAttrDict)
         for (studentInfo, grades) in data:
             try:
                 studentID = getStudentID(studentAttrDict, primaryAttr, roster, studentInfo)
@@ -232,4 +229,5 @@ if __name__ == "__main__":
     parser.add_argument('filename', metavar='CONFIG_FILE', type=str,
         help='The .json file describing your class.')
     args = parser.parse_args()
-    main(args.filename)
+    configPath = Path(args.filename)
+    main(json.loads(configPath.read_text()))

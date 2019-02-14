@@ -1,9 +1,9 @@
-import json, os, csv, re, argparse, glob, pathlib
+import json, re, argparse, glob
 from enum import Enum
+from pathlib import Path
 import pyexcel as pe
-# from xlsxReader import XLSXReader
+
 from fileFormats import getRows
-# from JSONprinter import NoIndentEncoder, NoIndent
 
 FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM OTHER')
 
@@ -44,7 +44,7 @@ def inferTypeFromFields(fields):
 def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
     fields = rows[0].keys()
     if len(set(fields)) != len(fields):
-        print(f"WARNING: duplicate column in {filename}")
+        print(f"WARNING: duplicate column!")
 
     (attrConfig, ignoredCols) = guessAttrConfig(fields, allAttrs)
     itemConfig = []
@@ -64,12 +64,12 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
         else:
             maxPoints = max([float(x['Score']) for x in rows])
             filters = []
-        name = sourceConf.get("sheetName", os.path.basename(sourceConf['file']))
+        name = sourceConf.get("sheetName", Path(sourceConf['file']).name)
         itemConfig.append({"name": name, "scoreCol": "Score", "max_points": maxPoints, "type": fileType.name, "filters": ["stripDenominator"], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
     if fileType == FileType.UNSCORED_GOOGLE_FORM:
-        name = sourceConf.get("sheetName", os.path.basename(sourceConf['file']))
-        itemConfig.append({"name": name, "scoreCol": False, "max_points": 1, "type": fileType.name, "filters": [], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
+        name = sourceConf.get("sheetName", Path(sourceConf['file']).name)
+        itemConfig.append({"name": name, "max_points": 1, "type": fileType.name, "filters": [], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
     sourceConf.update({
         # "_autoconf_fileType": fileType.name,
@@ -165,7 +165,7 @@ def updateConfig(globalConfigObj, sourceConf, rows):
     globalConfigObj["sources"].append(sourceConf)
 
 
-def main(sources, partialConfig, outfilename):
+def main(sources, partialConfig, outPath):
     if partialConfig:
         with open(partialConfig) as f:
             globalConfigObj = json.load(f)
@@ -192,38 +192,40 @@ def main(sources, partialConfig, outfilename):
     # ignoredFiles = globalConfigObj.get("_autoconf_ignoredFiles", [])
     preconfiguredFiles = map(getSource, globalConfigObj["sources"])
     for source in sources:
-        if os.path.isdir(source):
-            print("Searching `%s` for csv and xlsx files..." % source)
-            sourceIter = glob.iglob(os.path.join(source,'**'), recursive=True)
+        sourcePath = Path(source)
+        if sourcePath.is_dir():
+            print(f"Searching `{sourcePath}` for csv and xlsx files...")
+            sourceIter = glob.iglob(str(sourcePath/'**'), recursive=True)
         else:
             sourceIter = [source]
-        for filename in sourceIter:
-            if os.path.isdir(filename):
+        sourceIter = [Path(filename) for filename in sourceIter]
+        for filePath in sourceIter:
+            if filePath.is_dir():
                 continue
-            print("Handling file `%s`" % filename)
+            print(f"Handling file `{filePath}`")
             # if filename in ignoredFiles:
             #     print("Skipping because of _autoconf_ignoredFiles")
             #     continue
-            if filename in preconfiguredFiles:
+            if str(filePath) in preconfiguredFiles:
                 print("Skipping because file is already configured")
                 continue
-            ext = pathlib.Path(filename).suffix
+            ext = filePath.suffix
             if ext == ".csv":
-                rows = getRows(filename, False, None)
-                sourceConf = {"file": filename}
+                rows = getRows(filePath, False, None)
+                sourceConf = {"file": str(filePath)}
                 updateConfig(globalConfigObj, sourceConf, rows)
             elif ext == ".xlsx":
-                book = pe.get_book(file_name=filename, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
+                book = pe.get_book(file_name=str(filePath), auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
                 for name in book.sheet_names():
-                    print("Found sheet `%s`" % name)
+                    print(f"Found sheet `{name}`")
                     # if [filename, name] in ignoredFiles:
                     #     print("Skipping because of _autoconf_ignoredFiles")
                     #     continue
-                    if [filename, name] in preconfiguredFiles:
+                    if [str(filePath), name] in preconfiguredFiles:
                         print("Skipping because file is already configured")
                         continue
-                    rows = getRows(filename, False, name)
-                    sourceConf = {"file": filename, "sheetName": name}
+                    rows = getRows(filePath, False, name)
+                    sourceConf = {"file": str(filePath), "sheetName": name}
                     updateConfig(globalConfigObj, sourceConf, rows)
             else:
                 print("Ignoring.")
@@ -236,11 +238,8 @@ def main(sources, partialConfig, outfilename):
             categories.add(item['type'])
     globalConfigObj['outputs']['content'] = [{ "title": f"<Rename me - display name of {c}>", "from": c} for c in categories]
 
-    with open(outfilename, 'w') as outFile:
-        s = json.dumps(globalConfigObj, indent=2, separators=(',', ': ')) # cls=NoIndentEncoder,
-        outFile.write(s)
-        # json.dump(globalConfigObj, outFile, cls=NoIndentEncoder, indent=2, separators=(',', ': '))
-        print(f"Wrote config file to `{outfilename}`")
+    outPath.write_text(json.dumps(globalConfigObj, indent=2, separators=(',', ': ')))
+    print(f"Wrote config file to `{outPath}`")
 
 def getSource(sourceObj):
     filename = sourceObj["file"]
@@ -264,4 +263,4 @@ if __name__ == "__main__":
     parser.add_argument('-i', metavar='CONFIG_FILE', type=str, help='An initial config file to add to')
     parser.add_argument('-o', metavar='OUTPUT_FILE', type=str, help='Output file (default: tempConfig.json)', default='tempConfig.json')
     args = parser.parse_args()
-    main(args.sourcesDir, args.i, args.o)
+    main(args.sourcesDir, args.i, Path(args.o))
