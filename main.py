@@ -4,6 +4,13 @@ import argparse
 import dateutil.parser
 from pathlib import Path
 
+import logging
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.ERROR)
+logging.addLevelName(logging.WARNING, "\033[33m%s\033[0m" % logging.getLevelName(logging.WARNING))
+logging.addLevelName(logging.ERROR, "\033[31m%s\033[0m" % logging.getLevelName(logging.ERROR))
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 from fileFormats import getRows
 
 GRADES_KEY = 'Grades'
@@ -62,8 +69,7 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
                     try:
                         score = record[scoreCol]
                     except:
-                        print(assignment, str(sourcePath), sheetName, record)
-                        raise hell
+                        logger.error(f"Score column not in record {(assignment, str(sourcePath), sheetName, record)}")
                     score = float(checkAndClean(score, assignment['filters']))
                 if "due_date" in assignment:
                     dueDatetime = dateutil.parser.parse(assignment['due_date'])
@@ -80,14 +86,14 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
                 grades[assignment['name']] = score
             outputList.append((studentInfo, grades))
         except IncorrectFormatException:
-            print(f"WARNING: in file {sourcePath}, invalid value for {internalName}: '{identVal}'")
+            logger.warning(f"in file {sourcePath}, invalid value for {internalName}: '{identVal}'")
     return outputList
 
 def findPrimaryAttr(attrDict):
     for (attr, flags) in attrDict.items():
         if flags["identifiesStudent"] and flags["onePerStudent"]:
             return attr
-    print("ERROR: no primary student identifier")
+    logger.error("no primary student identifier")
 
 class UnidentifiableStudentException(Exception):
     pass
@@ -115,7 +121,7 @@ def mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID
                 oldInfo[key] = val
             else:
                 if oldInfo[key] != val:
-                    print("ERROR: overwriting singleton value")
+                    logger.error("overwriting singleton value")
         else:
             if key not in oldInfo:
                 oldInfo[key] = set([val])
@@ -128,8 +134,7 @@ def mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID
             if val not in roster[key]:
                 roster[key][val] = studentID
             elif roster[key][val] != studentID:
-                print(key, val, roster[key][val], studentID)
-                print("ERROR: reassigning identifer")
+                logger.error(f"reassigning identifer {(key, val, roster[key][val], studentID)}")
     return studentID
 
 def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj):
@@ -218,7 +223,7 @@ def main(globalConfigObj):
                     # Always keep the highest grade for each assignment (TODO: replace with more flexible policy?)
                     roster[primaryAttr][studentID][GRADES_KEY][k] = max(oldGrade, v)
             except UnidentifiableStudentException:
-                print(f"WARNING: could not identify student ({studentInfo})")
+                logger.warning(f"could not identify student ({studentInfo})")
 
     for (studentIdentifier, studentData) in roster[primaryAttr].items():
         printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"])

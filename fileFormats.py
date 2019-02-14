@@ -22,8 +22,7 @@ def getRows(sourcePath, isRoster, sheetName):
             else:
                 return getRowsNormalSingleSheetXLSX(sourcePath, sheetName)
     else:
-        print(str(sourcePath))
-        raise Exception("unknown filetype")
+        raise Exception(f"unknown filetype: {str(sourcePath)}")
 
 def getRowsNormalCSV(sourcePath):
     return pe.get_records(file_name=str(sourcePath), auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)

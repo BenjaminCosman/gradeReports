@@ -3,6 +3,13 @@ from enum import Enum
 from pathlib import Path
 import pyexcel as pe
 
+import logging
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.ERROR)
+logging.addLevelName(logging.WARNING, "\033[33m%s\033[0m" % logging.getLevelName(logging.WARNING))
+logging.addLevelName(logging.ERROR, "\033[31m%s\033[0m" % logging.getLevelName(logging.ERROR))
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 from fileFormats import getRows
 
 FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM OTHER')
@@ -44,7 +51,7 @@ def inferTypeFromFields(fields):
 def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
     fields = rows[0].keys()
     if len(set(fields)) != len(fields):
-        print(f"WARNING: duplicate column!")
+        logger.warning(f"duplicate column!")
 
     (attrConfig, ignoredCols) = guessAttrConfig(fields, allAttrs)
     itemConfig = []
@@ -109,7 +116,8 @@ def guessAttrConfig(potentialAttrFields, allAttrs):
         # If so, record it and move on to next column
         if identifiedAttr is not None:
             if identifiedAttr in attrConfig.values():
-                print(f"WARNING: found two columns for attribute {identifiedAttr}")
+                old = next(key for key, value in attrConfig.items() if value == identifiedAttr)
+                logger.warning(f"found two columns for attribute {identifiedAttr}: `{old}` and `{item}`")
                 ignoredCols.append(item)
             elif allAttrs[identifiedAttr].get("identifiesStudent", False):
                 attrConfig.update({item: identifiedAttr})
@@ -142,7 +150,7 @@ def updateGradescopeConfig(allAttrs, sourceConf, rows):
 
 def updateConfig(globalConfigObj, sourceConf, rows):
     fileType = inferTypeFromFields(list(rows[0].keys()))
-    print("\tInferred type: %s" % fileType.name)
+    logger.debug(f"\tInferred type: {fileType.name}")
     if fileType == FileType.ROSTER:
         # It's not a proper csv; more like 2 on top of each other.
         # It gets a special flag in config
@@ -194,7 +202,7 @@ def main(sources, partialConfig, outPath):
     for source in sources:
         sourcePath = Path(source)
         if sourcePath.is_dir():
-            print(f"Searching `{sourcePath}` for csv and xlsx files...")
+            logger.debug(f"Searching `{sourcePath}` for csv and xlsx files...")
             sourceIter = glob.iglob(str(sourcePath/'**'), recursive=True)
         else:
             sourceIter = [source]
@@ -202,12 +210,12 @@ def main(sources, partialConfig, outPath):
         for filePath in sourceIter:
             if filePath.is_dir():
                 continue
-            print(f"Handling file `{filePath}`")
+            logger.debug(f"Handling file `{filePath}`")
             # if filename in ignoredFiles:
             #     print("Skipping because of _autoconf_ignoredFiles")
             #     continue
             if str(filePath) in preconfiguredFiles:
-                print("Skipping because file is already configured")
+                logger.debug("Skipping because file is already configured")
                 continue
             ext = filePath.suffix
             if ext == ".csv":
@@ -217,18 +225,18 @@ def main(sources, partialConfig, outPath):
             elif ext == ".xlsx":
                 book = pe.get_book(file_name=str(filePath), auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
                 for name in book.sheet_names():
-                    print(f"Found sheet `{name}`")
+                    logger.debug(f"Found sheet `{name}`")
                     # if [filename, name] in ignoredFiles:
                     #     print("Skipping because of _autoconf_ignoredFiles")
                     #     continue
                     if [str(filePath), name] in preconfiguredFiles:
-                        print("Skipping because file is already configured")
+                        logger.debug("Skipping because file is already configured")
                         continue
                     rows = getRows(filePath, False, name)
                     sourceConf = {"file": str(filePath), "sheetName": name}
                     updateConfig(globalConfigObj, sourceConf, rows)
             else:
-                print("Ignoring.")
+                logger.debug("Ignoring.")
                 continue
     globalConfigObj["sources"].sort(key=mySort, reverse=True)
 
@@ -239,7 +247,7 @@ def main(sources, partialConfig, outPath):
     globalConfigObj['outputs']['content'] = [{ "title": f"<Rename me - display name of {c}>", "from": c} for c in categories]
 
     outPath.write_text(json.dumps(globalConfigObj, indent=2, separators=(',', ': ')))
-    print(f"Wrote config file to `{outPath}`")
+    logger.info(f"Wrote config file to `{outPath}`")
 
 def getSource(sourceObj):
     filename = sourceObj["file"]
