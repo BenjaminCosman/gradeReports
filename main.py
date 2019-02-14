@@ -86,7 +86,8 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
                 grades[assignment['name']] = score
             outputList.append((studentInfo, grades))
         except IncorrectFormatException:
-            logger.warning(f"in file {sourcePath}, invalid value for {internalName}: '{identVal}'")
+            logger.info(f"in file {sourcePath}, invalid value for {internalName}: '{identVal}'")
+            # logger.warning(f"    (therefore, skipping row {','.join(record.values())}")
     return outputList
 
 def findPrimaryAttr(attrDict):

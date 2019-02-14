@@ -1,5 +1,8 @@
+et-xmlfile==1.0.1
+jdcal==1.4
 lml==0.0.9
 lxml==4.3.0
+openpyxl==2.6.0
 pdfkit==0.6.1
 pyexcel==0.5.10
 pyexcel-io==0.5.11
