@@ -190,7 +190,7 @@ def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
                 index += 1
                 score = studentData[GRADES_KEY].get(assignmentName, None)
                 ogscore = f"{score}/{assignmentData['max_points']}"
-                prefix = f"<p><b>{index}. {assignmentName}:</b> "
+                prefix = f"<p><b>{assignmentName}:</b> "
                 html_str += f"{prefix} {ogscore} </p>"
     return html_str
 

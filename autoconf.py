@@ -244,7 +244,7 @@ def main(sources, partialConfig, outPath):
     for sourceData in globalConfigObj['sources']:
         for item in sourceData['items']:
             categories.add(item['type'])
-    globalConfigObj['outputs']['content'] = [{ "title": f"<Rename me - display name of {c}>", "from": c} for c in categories]
+    globalConfigObj['outputs']['content'] = [{ "title": f"[Rename me - display name of {c}]", "from": c} for c in categories]
 
     outPath.write_text(json.dumps(globalConfigObj, indent=2, separators=(',', ': ')))
     logger.info(f"Wrote config file to `{outPath}`")
