@@ -1,4 +1,0 @@
-Timestamp,Email Address,Score,PID,What is one plus two?,T/F: Three is odd
-10/10/2018 12:56:46,ash@ucsd.edu,2 / 2,A12345678,Three,TRUE
-10/11/2018 17:06:18,bill@ucsd.edu,1 / 2,A87654321,Four,TRUE
-10/12/2018 20:17:19,cam@ucsd.edu,1 / 2,A33333333,Three,FALSE
