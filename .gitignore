@@ -1,4 +1,4 @@
-data/
 reports/
 .venv/
 tempConfig.json
+__pycache__/
