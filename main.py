@@ -45,7 +45,7 @@ filtersAndChecks = {
 # returns [(Student, [Grade])]
 def sourceToGrades(sourceConfigObj, studentAttrDict):
     sourcePath = Path(sourceConfigObj['file'])
-    rows = getRows(sourcePath, sourceConfigObj.get("isRoster", False), sourceConfigObj.get("sheetName", None))
+    rows = getRows(sourcePath, isRoster=sourceConfigObj.get("isRoster", False), sheetName=sourceConfigObj.get("sheetName", None))
     identDict = sourceConfigObj["attributes"]
     sourceConfigReader = sourceConfigObj["items"]
     outputList = []

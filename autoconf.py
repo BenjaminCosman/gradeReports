@@ -219,7 +219,7 @@ def main(sources, partialConfig, outPath):
                 continue
             ext = filePath.suffix
             if ext == ".csv":
-                rows = getRows(filePath, False, None)
+                rows = getRows(filePath)
                 sourceConf = {"file": str(filePath)}
                 updateConfig(globalConfigObj, sourceConf, rows)
             elif ext == ".xlsx":
@@ -232,7 +232,7 @@ def main(sources, partialConfig, outPath):
                     if [str(filePath), name] in preconfiguredFiles:
                         logger.debug("Skipping because file is already configured")
                         continue
-                    rows = getRows(filePath, False, name)
+                    rows = getRows(filePath, sheetName=name)
                     sourceConf = {"file": str(filePath), "sheetName": name}
                     updateConfig(globalConfigObj, sourceConf, rows)
             else:

@@ -3,10 +3,18 @@ import openpyxl
 
 __all__ = ['getRows']
 
-# Dispatches to one of the functions below
-def getRows(sourcePath, isRoster, sheetName):
+#############################
+# This function is the only 'export' from this module.
+# Returns a list of OrderedDicts where each OrderedDict is a row
+# from the spreadsheet at `sourcePath`. If the file is a UCSD
+# Roster, set `isRoster` to True. If the file is an xlsx and you
+# want only one sheet from it, set `sheetName`.
+# Dispatches to one of the other functions below
+def getRows(sourcePath, isRoster=False, sheetName=None):
     ext = sourcePath.suffix
     if ext == '.csv':
+        if sheetName != None:
+            raise Exception("sheetName must be None (default) for csv")
         if isRoster:
             return getRowsRosterCSV(sourcePath)
         else:
@@ -24,6 +32,7 @@ def getRows(sourcePath, isRoster, sheetName):
                 return getRowsNormalSingleSheetXLSX(sourcePath, sheetName)
     else:
         raise Exception(f"unknown filetype: {str(sourcePath)}")
+#############################
 
 def getRowsNormalCSV(sourcePath):
     return pe.get_records(file_name=str(sourcePath), auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
