@@ -1,5 +1,7 @@
 # gradeReports
 
+[![CircleCI](https://circleci.com/gh/BenjaminCosman/gradeReports.svg?style=svg)](https://circleci.com/gh/BenjaminCosman/gradeReports)
+
 Very much a work in progress; contact owner with questions.
 
 ## Overview
