@@ -1,5 +1,4 @@
 import json, re, datetime
-import pdfkit
 import argparse
 import dateutil.parser
 from pathlib import Path
@@ -12,9 +11,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 from fileFormats import getRows
-
-GRADES_KEY = 'Grades'
-INFO_KEY = 'Info'
+from printing import printReport
+from constants import INFO_KEY, GRADES_KEY
 
 def checkAndClean(s, filters):
     for f in filters:
@@ -139,68 +137,6 @@ def mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID
             elif roster[key][val] != studentID:
                 logger.error(f"reassigning identifer {(key, val, roster[key][val], studentID)}")
     return studentID
-
-def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj):
-    studentInfo = studentData[INFO_KEY]
-    if 'Roster Name' not in studentInfo:
-        return
-
-    # Print simple text report to stdout
-    print('\n--------------------------')
-    print(studentIdentifier)
-    print(studentInfo)
-    for obj in outputConfigObj["content"]:
-        print(obj["title"])
-        for (assignmentName, assignmentData) in allAssignments.items():
-            if assignmentData['type'] == obj["from"]:
-                (score, annot) = studentData[GRADES_KEY].get(assignmentName, None)
-                print(f"\t{assignmentName}\t{score}/{assignmentData['max_points']}{formatAnnot(annot)}")
-    print('--------------------------\n')
-
-    # Print html report to file
-    clickerIDs = studentData[INFO_KEY].get('Clicker ID', set())
-    if len(clickerIDs) == 0:
-        clickerIDtext = "Clicker ID: unknown"
-    elif len(clickerIDs) == 1:
-        clickerIDtext = f"Clicker ID: {str(list(clickerIDs)[0])}"
-    else:
-        clickerIDtext = f"Clicker IDs: {str(clickerIDs)}"
-    header_str = f"""
-        <html>
-        <h1>{outputConfigObj["report-name"]}</h1>
-        <h2>Student Name: {studentInfo['Roster Name']} <br/>
-        Student PID: {studentIdentifier} <br/>
-        {clickerIDtext}</h2><body>"""
-    disclaimer_str = f"<div>{outputConfigObj['disclaimer-text']}</div>"
-    assignments_str = get_assignmenthtml(studentData, allAssignments, outputConfigObj)
-    total_str = f'{header_str} {disclaimer_str} {assignments_str}</body></html>'
-    reportsDir = Path('reports')
-    reportsDir.mkdir(exist_ok=True)
-    reportPath = reportsDir / f'{studentIdentifier}.html'
-    reportPath.write_text(total_str)
-
-    # Convert html report to pdf report
-    # pdfkit.from_file(f'./reports/{studentIdentifier}.html', f'./reports/{studentIdentifier}.pdf')
-
-def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
-    html_str = ""
-    for obj in outputConfigObj["content"]:
-        html_str += f"<h2>{obj['title']}</h2>"
-        index = 0
-        for (assignmentName, assignmentData) in allAssignments.items():
-            if assignmentData['type'] == obj["from"]:
-                index += 1
-                (score, annot) = studentData[GRADES_KEY].get(assignmentName, None)
-                ogscore = f"{score}/{assignmentData['max_points']}"
-                prefix = f"<p><b>{assignmentName}:</b> "
-                html_str += f"{prefix} {ogscore}{formatAnnot(annot)} </p>"
-    return html_str
-
-def formatAnnot(annot):
-    if annot == None:
-        return ''
-    else:
-        return f' ({annot})'
 
 def main(globalConfigObj):
     studentAttrDict = globalConfigObj["studentAttributes"]
