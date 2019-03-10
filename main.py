@@ -71,6 +71,7 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
                     except:
                         logger.error(f"Score column not in record {(assignment, str(sourcePath), sheetName, record)}")
                     score = float(checkAndClean(score, assignment['filters']))
+                annotation = None
                 if "due_date" in assignment:
                     dueDatetime = dateutil.parser.parse(assignment['due_date'])
                     turnedInStr = record[assignment['timestampCol']]
@@ -82,8 +83,9 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
                         utcTime = (float(turnedInStr) - 25569) * 86400
                         turninDatetime = datetime.datetime.utcfromtimestamp(utcTime)
                     if turninDatetime > dueDatetime:
-                        continue
-                grades[assignment['name']] = score
+                        score = 0
+                        annotation = f'late - received {turninDatetime.strftime("%b %d, %T")}'
+                grades[assignment['name']] = (score, annotation)
             outputList.append((studentInfo, grades))
         except IncorrectFormatException:
             logger.info(f"in file {sourcePath}, invalid value for {internalName}: '{identVal}'")
@@ -151,8 +153,8 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj)
         print(obj["title"])
         for (assignmentName, assignmentData) in allAssignments.items():
             if assignmentData['type'] == obj["from"]:
-                score = studentData[GRADES_KEY].get(assignmentName, None)
-                print(f"\t{assignmentName}\t{score}/{assignmentData['max_points']}")
+                (score, annot) = studentData[GRADES_KEY].get(assignmentName, None)
+                print(f"\t{assignmentName}\t{score}/{assignmentData['max_points']}{formatAnnot(annot)}")
     print('--------------------------\n')
 
     # Print html report to file
@@ -188,11 +190,17 @@ def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
         for (assignmentName, assignmentData) in allAssignments.items():
             if assignmentData['type'] == obj["from"]:
                 index += 1
-                score = studentData[GRADES_KEY].get(assignmentName, None)
+                (score, annot) = studentData[GRADES_KEY].get(assignmentName, None)
                 ogscore = f"{score}/{assignmentData['max_points']}"
                 prefix = f"<p><b>{assignmentName}:</b> "
-                html_str += f"{prefix} {ogscore} </p>"
+                html_str += f"{prefix} {ogscore}{formatAnnot(annot)} </p>"
     return html_str
+
+def formatAnnot(annot):
+    if annot == None:
+        return ''
+    else:
+        return f' ({annot})'
 
 def main(globalConfigObj):
     studentAttrDict = globalConfigObj["studentAttributes"]
@@ -220,7 +228,7 @@ def main(globalConfigObj):
                 studentID = getStudentID(studentAttrDict, primaryAttr, roster, studentInfo)
                 mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID)
                 for (k,v) in grades.items():
-                    oldGrade = roster[primaryAttr][studentID][GRADES_KEY].get(k,0)
+                    oldGrade = roster[primaryAttr][studentID][GRADES_KEY].get(k,(-float('inf'), None))
                     # Always keep the highest grade for each assignment (TODO: replace with more flexible policy?)
                     roster[primaryAttr][studentID][GRADES_KEY][k] = max(oldGrade, v)
             except UnidentifiableStudentException:
@@ -228,6 +236,7 @@ def main(globalConfigObj):
 
     for (studentIdentifier, studentData) in roster[primaryAttr].items():
         printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"])
+    # logger.info("reports generated in folder 'reports/'")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
