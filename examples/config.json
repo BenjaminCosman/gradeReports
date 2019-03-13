@@ -31,12 +31,12 @@
                 "Remote ID": "Clicker ID"
             },
             "items": [
-                {"name": "10/1", "scoreCol": "10/1/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
-                {"name": "10/3", "scoreCol": "10/3/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
-                {"name": "10/5", "scoreCol": "10/5/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
-                {"name": "10/8", "scoreCol": "10/8/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
-                {"name": "10/10", "scoreCol": "10/10/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
-                {"name": "10/12", "scoreCol": "10/12/18", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]}
+                {"name": "10/1", "scoreCol": "Session 1 Participation 10/1/2018", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
+                {"name": "10/3", "scoreCol": "Session 2 Participation 10/3/2018", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
+                {"name": "10/5", "scoreCol": "Session 3 Participation 10/5/2018", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
+                {"name": "10/8", "scoreCol": "Session 4 Participation 10/8/2018", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
+                {"name": "10/10", "scoreCol": "Session 5 Participation 10/10/2018", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]},
+                {"name": "10/12", "scoreCol": "Session 6 Participation 10/12/2018", "max_points": 1, "type": "in-class-participation", "filters": ["NVto0"]}
             ]
         },
         {

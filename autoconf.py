@@ -13,7 +13,7 @@ logger.setLevel(logging.DEBUG)
 from lib.fileFormats import getRows
 from lib.mung import checkAndClean
 
-FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM OTHER')
+FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM CLICKERS OTHER')
 
 keywords = {
     "Roster Name": [r'name\b'],
@@ -32,8 +32,8 @@ def inferTypeFromFields(fields):
     if fields[:5] == ['Sect ID', 'Course', 'Title', 'SecCode', 'Instructor']:
         return FileType.ROSTER
 
-    # if fields[:4] == ['Last Name', 'First Name', 'Student ID', 'Remote ID'] and any([re.match(r'^Session \d+ Total', field) for field in fields]):
-    #     return FileType.CLICKERS
+    if fields[:4] == ['Last Name', 'First Name', 'Student ID', 'Remote ID'] and any([re.match(r'^Session \d+', field) for field in fields]):
+        return FileType.CLICKERS
 
     lastCol = ""
     for col in fields:
@@ -63,7 +63,7 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
 
     itemConfig = []
 
-    if fileType == FileType.OTHER:
+    if fileType in [FileType.OTHER, FileType.CLICKERS]:
         for item in fields:
             if item not in ignoredCols and item not in attrConfig.keys():
                 filters = ["NoneTo0", "NVto0"]
@@ -71,7 +71,10 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
                 #     [float(checkAndClean(row[item], filters)) for row in rows]
                 # except ValueError:
                 #     continue
-                itemType = guessItemType(item)
+                if fileType == FileType.CLICKERS:
+                    itemType = "clickers"
+                else:
+                    itemType = guessItemType(item)
                 itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType, "filters": filters})
 
     if fileType == FileType.SCORED_GOOGLE_FORM:
@@ -178,7 +181,7 @@ def updateConfig(globalConfigObj, sourceConf, rows):
         })
     elif fileType == FileType.GRADESCOPE:
         updateGradescopeConfig(globalConfigObj['studentAttributes'], sourceConf, rows)
-    elif fileType in [FileType.SCORED_GOOGLE_FORM, FileType.UNSCORED_GOOGLE_FORM, FileType.OTHER]:
+    elif fileType in [FileType.SCORED_GOOGLE_FORM, FileType.UNSCORED_GOOGLE_FORM, FileType.CLICKERS, FileType.OTHER]:
         usable = updateOtherConfig(globalConfigObj['studentAttributes'], sourceConf, rows, fileType)
         if not usable:
             return
@@ -251,7 +254,7 @@ def main(sources, partialConfig, outPath):
                     sourceConf = {"file": str(filePath), "sheetName": name}
                     updateConfig(globalConfigObj, sourceConf, rows)
             else:
-                logger.debug("Ignoring.")
+                logger.debug("  Ignoring.")
                 continue
     globalConfigObj["sources"].sort(key=mySort, reverse=True)
 

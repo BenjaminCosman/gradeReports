@@ -53,6 +53,7 @@ def getRowsNormalSingleSheetXLSX(sourcePath, sheetname):
     # return rows
 
 def getRowsNormalMultiSheetXLSX(sourcePath):
+    # NOTE: openpyxl (and not pyexcel?) seems to read in blank cells as the string 'None'
     wb = openpyxl.load_workbook(filename=str(sourcePath), data_only=True)
     output = []
     for sheetname in wb.sheetnames:

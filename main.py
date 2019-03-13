@@ -42,7 +42,7 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
                     try:
                         score = record[scoreCol]
                     except:
-                        logger.error(f"Score column not in record {(assignment, str(sourcePath), sheetName, record)}")
+                        logger.error(f"In file '{str(sourcePath)}', expected score column '{scoreCol}' for assignment '{assignment['name']}' not in record '{record}'")
                     score = float(checkAndClean(score, assignment['filters']))
                 annotation = None
                 if "due_date" in assignment:
