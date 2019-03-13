@@ -10,9 +10,9 @@ logging.addLevelName(logging.ERROR, "\033[31m%s\033[0m" % logging.getLevelName(l
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-from fileFormats import getRows
-from printing import printReport
-from constants import INFO_KEY, GRADES_KEY
+from lib.fileFormats import getRows
+from lib.printing import printReport
+from lib.constants import INFO_KEY, GRADES_KEY
 
 def checkAndClean(s, filters):
     for f in filters:

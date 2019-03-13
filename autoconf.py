@@ -10,7 +10,7 @@ logging.addLevelName(logging.ERROR, "\033[31m%s\033[0m" % logging.getLevelName(l
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-from fileFormats import getRows
+from lib.fileFormats import getRows
 
 FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM OTHER')
 

@@ -1,7 +1,7 @@
 import pdfkit
 from pathlib import Path
 
-from constants import INFO_KEY, GRADES_KEY
+from lib.constants import INFO_KEY, GRADES_KEY
 
 __all__ = ['printReport']
 
