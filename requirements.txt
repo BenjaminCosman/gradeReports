@@ -4,7 +4,7 @@ lml==0.0.9
 lxml==4.3.0
 openpyxl==2.6.0
 pdfkit==0.6.1
-pyexcel==0.5.10
+pyexcel==0.5.12
 pyexcel-io==0.5.11
 pyexcel-xlsxr==0.5.2
 python-dateutil==2.8.0

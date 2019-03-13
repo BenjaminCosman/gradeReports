@@ -40,8 +40,8 @@ filtersAndChecks = {
     'stripDenominator': lambda x: x.split('/')[0].strip()
 }
 
-# returns [(Student, [Grade])]
 def sourceToGrades(sourceConfigObj, studentAttrDict):
+    '''returns [(Student, [Grade])]'''
     sourcePath = Path(sourceConfigObj['file'])
     rows = getRows(sourcePath, isRoster=sourceConfigObj.get("isRoster", False), sheetName=sourceConfigObj.get("sheetName", None))
     identDict = sourceConfigObj["attributes"]
