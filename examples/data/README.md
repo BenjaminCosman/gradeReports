@@ -1,0 +1,1 @@
+These files represent various kinds of grading data from a class. autoconf.py should ignore files that are not csv/xlsx or that have no grading data (e.g. this file and SeatFacts.xlsx)

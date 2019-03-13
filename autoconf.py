@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 from lib.fileFormats import getRows
+from lib.mung import checkAndClean
 
 FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM OTHER')
 
@@ -51,16 +52,25 @@ def inferTypeFromFields(fields):
 def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
     fields = rows[0].keys()
     if len(set(fields)) != len(fields):
-        logger.warning(f"duplicate column!")
+        logger.warning("duplicate column!")
 
     (attrConfig, ignoredCols) = guessAttrConfig(fields, allAttrs)
+    # if len(attrConfig.keys()) == 0:
+    #     logger.debug("  No student attributes detected; ignoring")
+    #     return
+
     itemConfig = []
 
     if fileType == FileType.OTHER:
         for item in fields:
             if item not in ignoredCols and item not in attrConfig.keys():
+                filters = ["NoneTo0", "NVto0"]
+                # try:
+                #     [float(checkAndClean(row[item], filters)) for row in rows]
+                # except ValueError:
+                #     continue
                 itemType = guessItemType(item)
-                itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType, "filters": ["NoneTo0", "NVto0"]})
+                itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType, "filters": filters})
 
     if fileType == FileType.SCORED_GOOGLE_FORM:
         row = rows[0]
