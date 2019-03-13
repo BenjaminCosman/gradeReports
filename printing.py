@@ -5,7 +5,7 @@ from constants import INFO_KEY, GRADES_KEY
 
 __all__ = ['printReport']
 
-def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj):
+def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf):
     '''This function is the only 'export' from this module.
     Given all relevant data about one student, it prints a text report
     to stdout and also dumps a html or pdf report to ./reports'''
@@ -48,7 +48,8 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj)
     reportPath.write_text(total_str)
 
     # Convert html report to pdf report
-    # pdfkit.from_file(f'./reports/{studentIdentifier}.html', f'./reports/{studentIdentifier}.pdf')
+    if makePdf:
+        pdfkit.from_file(f'./reports/{studentIdentifier}.html', f'./reports/{studentIdentifier}.pdf')
 #############################
 
 def get_assignmenthtml(studentData, allAssignments, outputConfigObj):

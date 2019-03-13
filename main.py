@@ -138,7 +138,7 @@ def mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID
                 logger.error(f"reassigning identifer {(key, val, roster[key][val], studentID)}")
     return studentID
 
-def main(globalConfigObj):
+def gatherData(globalConfigObj):
     studentAttrDict = globalConfigObj["studentAttributes"]
     # Canonicalize with defaults
     for (k,v) in studentAttrDict.items():
@@ -170,14 +170,17 @@ def main(globalConfigObj):
             except UnidentifiableStudentException:
                 logger.warning(f"could not identify student ({studentInfo})")
 
-    for (studentIdentifier, studentData) in roster[primaryAttr].items():
-        printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"])
-    # logger.info("reports generated in folder 'reports/'")
+    return (roster[primaryAttr], allAssignments)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', metavar='CONFIG_FILE', type=str,
         help='The .json file describing your class.')
+    parser.add_argument('-p', '--pdf', action='store_true', help='Generate pdf reports')
     args = parser.parse_args()
-    configPath = Path(args.filename)
-    main(json.loads(configPath.read_text()))
+    globalConfigObj = json.loads(Path(args.filename).read_text())
+    (gradebook, allAssignments) = gatherData(globalConfigObj)
+    for (studentIdentifier, studentData) in gradebook.items():
+        printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"], args.pdf)
+    # logger.info("reports generated in folder 'reports/'")
+
