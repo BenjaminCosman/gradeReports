@@ -50,14 +50,16 @@ def inferTypeFromFields(fields):
     return FileType.OTHER
 
 def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
+    '''updates sourceConf in place. Returns True if successful; False if the
+    file could not be used (i.e. appeared to contain no grade data)'''
     fields = rows[0].keys()
     if len(set(fields)) != len(fields):
         logger.warning("duplicate column!")
 
     (attrConfig, ignoredCols) = guessAttrConfig(fields, allAttrs)
-    # if len(attrConfig.keys()) == 0:
-    #     logger.debug("  No student attributes detected; ignoring")
-    #     return
+    if len(attrConfig.keys()) == 0:
+        logger.debug("  No student attributes detected; ignoring")
+        return False
 
     itemConfig = []
 
@@ -79,7 +81,7 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
             maxPoints = int(score.split('/')[1].strip())
             filters = ["stripDenominator"]
         else:
-            maxPoints = max([float(x['Score']) for x in rows])
+            maxPoints = max([int(x['Score']) for x in rows])
             filters = []
         name = sourceConf.get("sheetName", Path(sourceConf['file']).name)
         itemConfig.append({"name": name, "scoreCol": "Score", "max_points": maxPoints, "type": fileType.name, "filters": ["stripDenominator"], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
@@ -94,6 +96,7 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
         "items": itemConfig, #[NoIndent(x) for x in itemConfig],
         # "_autoconf_ignoredCols": ignoredCols
     })
+    return True
 
 def guessItemType(item):
     item = item.lower()
@@ -176,7 +179,9 @@ def updateConfig(globalConfigObj, sourceConf, rows):
     elif fileType == FileType.GRADESCOPE:
         updateGradescopeConfig(globalConfigObj['studentAttributes'], sourceConf, rows)
     elif fileType in [FileType.SCORED_GOOGLE_FORM, FileType.UNSCORED_GOOGLE_FORM, FileType.OTHER]:
-        updateOtherConfig(globalConfigObj['studentAttributes'], sourceConf, rows, fileType)
+        usable = updateOtherConfig(globalConfigObj['studentAttributes'], sourceConf, rows, fileType)
+        if not usable:
+            return
     else:
         raise Exception(f"unknown filetype {fileType.name}")
 
