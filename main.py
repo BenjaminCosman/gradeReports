@@ -12,7 +12,7 @@ logger.setLevel(logging.DEBUG)
 
 from lib.fileFormats import getRows
 from lib.printing import printReport
-from lib.constants import INFO_KEY, GRADES_KEY
+from lib.constants import INFO_KEY, GRADES_KEY, ALL_DEFAULT_FILTERS
 from lib.mung import IncorrectFormatException, checkAndClean
 
 def sourceToGrades(sourceConfigObj, studentAttrDict):
@@ -43,7 +43,7 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
                         score = record[scoreCol]
                     except:
                         logger.error(f"In file '{str(sourcePath)}', expected score column '{scoreCol}' for assignment '{assignment['name']}' not in record '{record}'")
-                    score = float(checkAndClean(score, assignment['filters']))
+                    score = float(checkAndClean(score, assignment.get('filters', ALL_DEFAULT_FILTERS)))
                 annotation = None
                 if "due_date" in assignment:
                     dueDatetime = dateutil.parser.parse(assignment['due_date'])

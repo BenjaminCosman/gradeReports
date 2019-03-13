@@ -12,6 +12,7 @@ logger.setLevel(logging.DEBUG)
 
 from lib.fileFormats import getRows
 from lib.mung import checkAndClean
+from lib.constants import ALL_DEFAULT_FILTERS
 
 FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM CLICKERS OTHER')
 
@@ -66,7 +67,7 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
     if fileType in [FileType.OTHER, FileType.CLICKERS]:
         for item in fields:
             if item not in ignoredCols and item not in attrConfig.keys():
-                filters = ["NoneTo0", "NVto0"]
+                filters = ALL_DEFAULT_FILTERS
                 # try:
                 #     [float(checkAndClean(row[item], filters)) for row in rows]
                 # except ValueError:

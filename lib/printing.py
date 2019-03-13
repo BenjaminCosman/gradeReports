@@ -16,6 +16,9 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
     # Print simple text report to stdout
     print('\n--------------------------')
     print(studentIdentifier)
+    # sorts the set of clickerIDs just so it has a deterministic output that
+    # we can check in the tests
+    studentInfo['Clicker ID'] = sorted(list(studentInfo['Clicker ID']))
     print(studentInfo)
     for obj in outputConfigObj["content"]:
         print(obj["title"])
@@ -26,13 +29,13 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
     print('--------------------------\n')
 
     # Print html report to file
-    clickerIDs = studentData[INFO_KEY].get('Clicker ID', set())
+    clickerIDs = studentInfo.get('Clicker ID', set())
     if len(clickerIDs) == 0:
         clickerIDtext = "Clicker ID: unknown"
     elif len(clickerIDs) == 1:
         clickerIDtext = f"Clicker ID: {str(list(clickerIDs)[0])}"
     else:
-        clickerIDtext = f"Clicker IDs: {str(clickerIDs)}"
+        clickerIDtext = f"Clicker IDs: {str(sorted(list(clickerIDs)))}"
     header_str = f"""
         <html>
         <h1>{outputConfigObj["report-name"]}</h1>
