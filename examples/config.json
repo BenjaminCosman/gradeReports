@@ -67,6 +67,32 @@
             "items": [
                 {"name": "Pre-class Survey", "max_points": 1, "type": "survey", "filters": [], "due_date": "10/20/2018 23:59:59", "timestampCol": "Timestamp"}
             ]
+        },
+        {
+            "file": "examples/data/DiscussionAttendance.xlsx",
+            "sheetName": "attendance",
+
+            "attributes": {
+                "PID": "Student ID"
+            },
+            "items": [
+                {"name": "Week 1", "scoreCol": "Week 1", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]},
+                {"name": "Week 2", "scoreCol": "Week 2", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]},
+                {"name": "Week 3", "scoreCol": "Week 3", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]}
+            ]
+        },
+        {
+            "file": "examples/data/DiscussionAttendance.xlsx",
+            "sheetName": "others(waitlist)",
+
+            "attributes": {
+                "PID": "Student ID"
+            },
+            "items": [
+                {"name": "Week 1", "scoreCol": "Week 1", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]},
+                {"name": "Week 2", "scoreCol": "Week 2", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]},
+                {"name": "Week 3", "scoreCol": "Week 3", "max_points": 1, "type": "discussion", "filters": ["NoneTo0"]}
+            ]
         }
     ],
     "outputs": {
@@ -76,6 +102,7 @@
             { "title": "Homework", "from": "homework" },
             { "title": "In-class Participation", "from": "in-class-participation" },
             { "title": "Review Quizzes", "from": "review-quiz" },
+            { "title": "Discussion", "from": "discussion" },
             { "title": "Surveys", "from": "survey" }
         ]
     }
