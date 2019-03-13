@@ -21,8 +21,8 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
         print(obj["title"])
         for (assignmentName, assignmentData) in allAssignments.items():
             if assignmentData['type'] == obj["from"]:
-                (score, annot) = studentData[GRADES_KEY].get(assignmentName, None)
-                print(f"\t{assignmentName}\t{score}/{assignmentData['max_points']}{formatAnnot(annot)}")
+                (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
+                print(f"\t{assignmentName}\t{formatScore(score)}/{assignmentData['max_points']}{formatAnnot(annot)}")
     print('--------------------------\n')
 
     # Print html report to file
@@ -60,8 +60,8 @@ def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
         for (assignmentName, assignmentData) in allAssignments.items():
             if assignmentData['type'] == obj["from"]:
                 index += 1
-                (score, annot) = studentData[GRADES_KEY].get(assignmentName, None)
-                ogscore = f"{score}/{assignmentData['max_points']}"
+                (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
+                ogscore = f"{formatScore(score)}/{assignmentData['max_points']}"
                 prefix = f"<p><b>{assignmentName}:</b> "
                 html_str += f"{prefix} {ogscore}{formatAnnot(annot)} </p>"
     return html_str
@@ -71,3 +71,7 @@ def formatAnnot(annot):
         return ''
     else:
         return f' ({annot})'
+
+def formatScore(score):
+    '''Returns simplest fixed-point formatting, e.g. 3.10 -> 3.1, 3.00 -> 3'''
+    return ('%f' % score).rstrip('0').rstrip('.')
