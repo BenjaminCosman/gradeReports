@@ -2,6 +2,7 @@ import json, re, datetime
 import argparse
 import dateutil.parser
 from pathlib import Path
+import tqdm
 
 import logging
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.ERROR)
@@ -155,6 +156,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     globalConfigObj = json.loads(Path(args.filename).read_text())
     (gradebook, allAssignments) = gatherData(globalConfigObj)
-    for (studentIdentifier, studentData) in gradebook.items():
+    students = gradebook.items()
+    if args.pdf:
+        # Attach progress bar only if generating pdfs (which is slow). Non-pdf
+        # version is fast enough that progress bar is just unnecessary clutter
+        students = tqdm.tqdm(students)
+    for (studentIdentifier, studentData) in students:
         printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"], args.pdf)
     # logger.info("reports generated in folder 'reports/'")
