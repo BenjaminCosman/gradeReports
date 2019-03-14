@@ -86,7 +86,7 @@ performed to clean and validate this attribute whenever it is read. For example,
 if students are asked to enter their student ids on a web form, then you may want
 to strip off any whitespace and change any letters to uppercase. For a full list
 of filter options (and to add your own, if needed), see the definition of
-`filtersAndChecks` in `main.py`.
+`filtersAndChecks` in `lib/munge.py`.
 
 key: "sources"
 value: not yet documented; see `examples/config.json`
@@ -96,11 +96,13 @@ value: not yet documented; see `examples/config.json`
 
 ## Known issues
 
-- No two assignments can have the same name, even if they are in different categories (e.g. "Week 1" for both discussion attendance and weekly review quiz), or else the grades from one will silently overwrite the other's.
+- No two assignments can have the same name, even if they are in different
+categories (e.g. "Week 1" for both discussion attendance and weekly review
+quiz), or else the grades from one will silently overwrite the other's.
 - Scored google forms *display* the score as SCORE / MAX but *store* only the
 raw score. So if you download it as a csv the formatting is turned into the
 canonical text and you will
 need the "stripDenominator" filter; if you download it as an xlsx then the
-formatting remains visible to you but hidden from the code, so you will *not*
-want that filter and also autoconf may do a worse job of guessing the intended
+formatting remains visible to you but hidden from the code, so you will not
+need that filter and also autoconf may do a worse job of guessing the intended
 max score.

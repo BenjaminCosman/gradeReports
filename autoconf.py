@@ -217,7 +217,7 @@ def main(sources, partialConfig, outPath):
         }
 
     # ignoredFiles = globalConfigObj.get("_autoconf_ignoredFiles", [])
-    preconfiguredFiles = map(getSource, globalConfigObj["sources"])
+    preconfiguredFiles = list(map(getSource, globalConfigObj["sources"]))
     for source in sources:
         sourcePath = Path(source)
         if sourcePath.is_dir():
@@ -263,7 +263,8 @@ def main(sources, partialConfig, outPath):
     for sourceData in globalConfigObj['sources']:
         for item in sourceData['items']:
             categories.add(item['type'])
-    globalConfigObj['outputs']['content'] = [{ "title": f"[Rename me - display name of {c}]", "from": c} for c in categories]
+    oldCategories = set(map(lambda z: z['from'], globalConfigObj['outputs']['content']))
+    globalConfigObj['outputs']['content'] += [{ "title": f"[Rename me - display name of {c}]", "from": c} for c in categories.difference(oldCategories)]
 
     outPath.write_text(json.dumps(globalConfigObj, indent=2, separators=(',', ': ')))
     logger.info(f"Wrote config file to `{outPath}`")

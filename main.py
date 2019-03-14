@@ -158,4 +158,3 @@ if __name__ == "__main__":
     for (studentIdentifier, studentData) in gradebook.items():
         printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"], args.pdf)
     # logger.info("reports generated in folder 'reports/'")
-
