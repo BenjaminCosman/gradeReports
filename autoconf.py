@@ -12,7 +12,7 @@ logger.setLevel(logging.DEBUG)
 
 from lib.fileFormats import getRows
 from lib.mung import checkAndClean
-from lib.constants import ALL_DEFAULT_FILTERS
+from lib.constants import ASSIGNMENTS_KEY, ALL_DEFAULT_FILTERS
 
 FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM CLICKERS OTHER')
 
@@ -97,7 +97,7 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
     sourceConf.update({
         # "_autoconf_fileType": fileType.name,
         "attributes": attrConfig,
-        "items": itemConfig, #[NoIndent(x) for x in itemConfig],
+        ASSIGNMENTS_KEY: itemConfig, #[NoIndent(x) for x in itemConfig],
         # "_autoconf_ignoredCols": ignoredCols
     })
     return True
@@ -162,7 +162,7 @@ def updateGradescopeConfig(allAttrs, sourceConf, rows):
 
     sourceConf.update({
         "attributes": attrConfig,
-        "items": itemConfig,
+        ASSIGNMENTS_KEY: itemConfig,
     })
 
 def updateConfig(globalConfigObj, sourceConf, rows):
@@ -178,7 +178,7 @@ def updateConfig(globalConfigObj, sourceConf, rows):
                 "PID": "Student ID",
                 "Student": "Roster Name"
             },
-            "items": []
+            ASSIGNMENTS_KEY: []
         })
     elif fileType == FileType.GRADESCOPE:
         updateGradescopeConfig(globalConfigObj['studentAttributes'], sourceConf, rows)
@@ -261,7 +261,7 @@ def main(sources, partialConfig, outPath):
 
     categories = set()
     for sourceData in globalConfigObj['sources']:
-        for item in sourceData['items']:
+        for item in sourceData[ASSIGNMENTS_KEY]:
             categories.add(item['type'])
     oldCategories = set(map(lambda z: z['from'], globalConfigObj['outputs']['content']))
     globalConfigObj['outputs']['content'] += [{ "title": f"[Rename me - display name of {c}]", "from": c} for c in categories.difference(oldCategories)]

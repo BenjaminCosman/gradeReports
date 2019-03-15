@@ -15,7 +15,7 @@
         "PID": "Student ID",
         "Student": "Roster Name"
       },
-      "items": []
+      "assignments": []
     },
     {
       "file": "examples/data/clickerRegistrations.csv",
@@ -23,14 +23,14 @@
         "Your PID": "Student ID",
         "Your iclicker ID": "Clicker ID"
       },
-      "items": []
+      "assignments": []
     },
     {
       "file": "examples/data/UploadFile.csv",
       "attributes": {
         "Remote ID": "Clicker ID"
       },
-      "items": [
+      "assignments": [
         {"name": "10/1", "scoreCol": "Session 1 Participation 10/1/2018", "max_points": 1, "type": "in-class-participation"},
         {"name": "10/3", "scoreCol": "Session 2 Participation 10/3/2018", "max_points": 1, "type": "in-class-participation"},
         {"name": "10/5", "scoreCol": "Session 3 Participation 10/5/2018", "max_points": 1, "type": "in-class-participation"},
@@ -44,7 +44,7 @@
       "attributes": {
         "SID": "Student ID"
       },
-      "items": [
+      "assignments": [
         {"name": "HW-1", "scoreCol": "HW 1", "max_points": 32, "type": "homework"},
         {"name": "HW-2", "scoreCol": "HW 2", "max_points": 17, "type": "homework"}
       ]
@@ -54,7 +54,7 @@
       "attributes": {
         "PID": "Student ID"
       },
-      "items": [
+      "assignments": [
         {"name": "Week1", "sheetName": "Week1", "scoreCol": "Score", "max_points": 2, "type": "review-quiz", "due_date": "10/3/2018 23:59:59", "timestampCol": "Timestamp"},
         {"name": "Week2", "sheetName": "Week2", "scoreCol": "Score", "max_points": 3, "type": "review-quiz", "due_date": "10/10/2018 23:59:59", "timestampCol": "Timestamp"}
       ]
@@ -64,7 +64,7 @@
       "attributes": {
         "PID": "Student ID"
       },
-      "items": [
+      "assignments": [
         {"name": "Pre-class Survey", "max_points": 1, "type": "survey", "due_date": "10/20/2018 23:59:59", "timestampCol": "Timestamp"}
       ]
     },
@@ -75,7 +75,7 @@
       "attributes": {
         "PID": "Student ID"
       },
-      "items": [
+      "assignments": [
         {"name": "Week 1", "scoreCol": "Week 1", "max_points": 1, "type": "discussion"},
         {"name": "Week 2", "scoreCol": "Week 2", "max_points": 1, "type": "discussion"},
         {"name": "Week 3", "scoreCol": "Week 3", "max_points": 1, "type": "discussion"}
@@ -88,7 +88,7 @@
       "attributes": {
         "PID": "Student ID"
       },
-      "items": [
+      "assignments": [
         {"name": "Week 1", "scoreCol": "Week 1", "max_points": 1, "type": "discussion"},
         {"name": "Week 2", "scoreCol": "Week 2", "max_points": 1, "type": "discussion"},
         {"name": "Week 3", "scoreCol": "Week 3", "max_points": 1, "type": "discussion"}

@@ -13,7 +13,7 @@ logger.setLevel(logging.DEBUG)
 
 from lib.fileFormats import getRows
 from lib.printing import printReport
-from lib.constants import INFO_KEY, GRADES_KEY, ALL_DEFAULT_FILTERS
+from lib.constants import INFO_KEY, GRADES_KEY, ASSIGNMENTS_KEY, ALL_DEFAULT_FILTERS
 from lib.mung import IncorrectFormatException, checkAndClean
 from lib.config import loadConfig
 
@@ -22,7 +22,7 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
     sourcePath = Path(sourceConfigObj['file'])
     rows = getRows(sourcePath, isRoster=sourceConfigObj.get("isRoster", False), sheetName=sourceConfigObj.get("sheetName", None))
     identDict = sourceConfigObj["attributes"]
-    sourceConfigReader = sourceConfigObj["items"]
+    sourceConfigReader = sourceConfigObj[ASSIGNMENTS_KEY]
     outputList = []
     for record in rows:
         try:
@@ -123,7 +123,7 @@ def gatherData(globalConfigObj):
     sourceConfigList = globalConfigObj["sources"]
     allAssignments = {}
     for obj in sourceConfigList:
-        for assignmentData in obj["items"]:
+        for assignmentData in obj[ASSIGNMENTS_KEY]:
             allAssignments[assignmentData["name"]] = assignmentData
 
     for obj in sourceConfigList:

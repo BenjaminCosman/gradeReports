@@ -19,16 +19,12 @@ def getRows(sourcePath, isRoster=False, sheetName=None):
         else:
             return getRowsNormalCSV(sourcePath)
     elif ext == '.xlsx':
+        if sheetName == None:
+            raise Exception("no sheetName for xlsx")
         if isRoster:
-            if sheetName == None:
-                raise Exception("must specify sheetName for roster")
-            else:
-                return getRowsRosterSingleSheetXLSX(sourcePath, sheetName)
+            return getRowsRosterSingleSheetXLSX(sourcePath, sheetName)
         else:
-            if sheetName == None:
-                return getRowsNormalMultiSheetXLSX(sourcePath)
-            else:
-                return getRowsNormalSingleSheetXLSX(sourcePath, sheetName)
+            return getRowsNormalSingleSheetXLSX(sourcePath, sheetName)
     else:
         raise Exception(f"unknown filetype: {str(sourcePath)}")
 
@@ -51,28 +47,6 @@ def getRowsNormalSingleSheetXLSX(sourcePath, sheetname):
     #     #TODO: remove these once issue is resolved (https://github.com/pyexcel/pyexcel/issues/170)
     #     raise Exception(f"cannot have blank column headers in xlsx file (sheet {sheetname} of {sourcePath})")
     # return rows
-
-def getRowsNormalMultiSheetXLSX(sourcePath):
-    # NOTE: openpyxl (and not pyexcel?) seems to read in blank cells as the string 'None'
-    wb = openpyxl.load_workbook(filename=str(sourcePath), data_only=True)
-    output = []
-    for sheetname in wb.sheetnames:
-        rows = pe.get_records(array=[[str(x) for x in row] for row in wb[sheetname].values])
-        for row in rows:
-            row.update({"_sheetName": sheetname})
-        output += rows
-    return output
-    # #TODO: probably terrible performance - loading whole book just to read sheet names
-    # sheets = pe.get_book_dict(file_name=str(sourcePath)).keys()
-    # output = []
-    # for sheetname in sheets:
-    #     rows = pe.get_records(file_name=str(sourcePath), sheet_name=sheetname, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
-    #     if '' in rows[0].keys():
-    #         raise Exception(f"cannot have blank column headers in xlsx file (sheet {sheetname} of {sourcePath})")
-    #     for row in rows:
-    #         row.update({"_sheetName": sheetname})
-    #     output += rows
-    # return output
 
 def getRowsRosterSingleSheetXLSX(sourcePath, sheetname):
     allRows = pe.get_array(file_name=str(sourcePath), sheet_name=sheetname, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
