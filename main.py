@@ -1,4 +1,4 @@
-import json, re, datetime
+import re, datetime
 import argparse
 import dateutil.parser
 from pathlib import Path
@@ -15,6 +15,7 @@ from lib.fileFormats import getRows
 from lib.printing import printReport
 from lib.constants import INFO_KEY, GRADES_KEY, ALL_DEFAULT_FILTERS
 from lib.mung import IncorrectFormatException, checkAndClean
+from lib.config import loadConfig
 
 def sourceToGrades(sourceConfigObj, studentAttrDict):
     '''returns [(Student, [Grade])]'''
@@ -116,14 +117,6 @@ def mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID
 
 def gatherData(globalConfigObj):
     studentAttrDict = globalConfigObj["studentAttributes"]
-    # Canonicalize with defaults
-    for (k,v) in studentAttrDict.items():
-        if "identifiesStudent" not in v:
-            v["identifiesStudent"] = False
-        if "onePerStudent" not in v:
-            v["onePerStudent"] = False
-        if "filters" not in v:
-            v["filters"] = []
     primaryAttr = findPrimaryAttr(studentAttrDict)
     roster = {k:{} for k in studentAttrDict}
 
@@ -154,7 +147,7 @@ if __name__ == "__main__":
         help='The .json file describing your class.')
     parser.add_argument('-p', '--pdf', action='store_true', help='Generate pdf reports')
     args = parser.parse_args()
-    globalConfigObj = json.loads(Path(args.filename).read_text())
+    globalConfigObj = loadConfig(args.filename)
     (gradebook, allAssignments) = gatherData(globalConfigObj)
     students = gradebook.items()
     if args.pdf:

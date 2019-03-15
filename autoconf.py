@@ -248,7 +248,7 @@ def main(sources, partialConfig, outPath):
                     # if [filename, name] in ignoredFiles:
                     #     print("Skipping because of _autoconf_ignoredFiles")
                     #     continue
-                    if [str(filePath), name] in preconfiguredFiles:
+                    if (str(filePath), name) in preconfiguredFiles:
                         logger.debug("Skipping because file is already configured")
                         continue
                     rows = getRows(filePath, sheetName=name)
@@ -272,7 +272,7 @@ def main(sources, partialConfig, outPath):
 def getSource(sourceObj):
     filename = sourceObj["file"]
     if "sheetname" in sourceObj:
-        return [filename, sourceObj["sheetname"]]
+        return (filename, sourceObj["sheetname"])
     else:
         return filename
 
