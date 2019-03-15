@@ -25,46 +25,49 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
     sourceConfigReader = sourceConfigObj[ASSIGNMENTS_KEY]
     outputList = []
     for record in rows:
-        try:
-            studentInfo = {}
-            for (identCol, internalName) in identDict.items():
-                identVal = record[identCol]
+        studentInfo = {}
+        for (identCol, internalName) in identDict.items():
+            identVal = record[identCol]
+            try:
                 studentInfo[internalName] = checkAndClean(identVal, studentAttrDict[internalName]['filters'])
-            grades = {}
-            for assignment in sourceConfigReader:
-                sheetName = assignment.get('sheetName', None)
-                if (sheetName != None) and (record['_sheetName'] != sheetName):
-                    continue
+            except IncorrectFormatException:
+                logger.info(f"in file {sourcePath}, invalid value for {internalName}: '{identVal}'")
+                logger.info(f"skipping this field; may result in an UnidentifiableStudentException later")
+        grades = {}
+        for assignment in sourceConfigReader:
+            sheetName = assignment.get('sheetName', None)
+            if (sheetName != None) and (record['_sheetName'] != sheetName):
+                continue
 
-                scoreCol = assignment.get('scoreCol', None)
-                if scoreCol == None:
-                    # Full credit for completion (i.e. being in the spreadsheet at all)
-                    score = assignment['max_points']
-                else:
-                    try:
-                        score = record[scoreCol]
-                    except:
-                        logger.error(f"In file '{str(sourcePath)}', expected score column '{scoreCol}' for assignment '{assignment['name']}' not in record '{record}'")
+            scoreCol = assignment.get('scoreCol', None)
+            if scoreCol == None:
+                # Full credit for completion (i.e. being in the spreadsheet at all)
+                score = assignment['max_points']
+            else:
+                try:
+                    score = record[scoreCol]
+                except:
+                    logger.error(f"In file '{str(sourcePath)}', expected score column '{scoreCol}' for assignment '{assignment['name']}' not in record '{record}'")
+                try:
                     score = float(checkAndClean(score, assignment.get('filters', ALL_DEFAULT_FILTERS)))
-                annotation = None
-                if "due_date" in assignment:
-                    dueDatetime = dateutil.parser.parse(assignment['due_date'])
-                    turnedInStr = record[assignment['timestampCol']]
-                    try:
-                        turninDatetime = dateutil.parser.parse(turnedInStr)
-                    except ValueError:
-                        # Try reading as an xlsx timestamp instead
-                        # https://gist.github.com/erikvullings/825283249a5b4617d0f36bcba4fa8be8
-                        utcTime = (float(turnedInStr) - 25569) * 86400
-                        turninDatetime = datetime.datetime.utcfromtimestamp(utcTime)
-                    if turninDatetime > dueDatetime:
-                        score = 0
-                        annotation = f'late - received {turninDatetime.strftime("%b %d, %T")}'
-                grades[assignment['name']] = (score, annotation)
-            outputList.append((studentInfo, grades))
-        except IncorrectFormatException:
-            logger.info(f"in file {sourcePath}, invalid value for {internalName}: '{identVal}'")
-            # logger.warning(f"    (therefore, skipping row {','.join(record.values())}")
+                except IncorrectFormatException:
+                    logger.error(f"in file {sourcePath}, unreadable score for score column {scoreCol}: '{score}'")
+            annotation = None
+            if "due_date" in assignment:
+                dueDatetime = dateutil.parser.parse(assignment['due_date'])
+                turnedInStr = record[assignment['timestampCol']]
+                try:
+                    turninDatetime = dateutil.parser.parse(turnedInStr)
+                except ValueError:
+                    # Try reading as an xlsx timestamp instead
+                    # https://gist.github.com/erikvullings/825283249a5b4617d0f36bcba4fa8be8
+                    utcTime = (float(turnedInStr) - 25569) * 86400
+                    turninDatetime = datetime.datetime.utcfromtimestamp(utcTime)
+                if turninDatetime > dueDatetime:
+                    score = 0
+                    annotation = f'late - received {turninDatetime.strftime("%b %d, %T")}'
+            grades[assignment['name']] = (score, annotation)
+        outputList.append((studentInfo, grades))
     return outputList
 
 def findPrimaryAttr(attrDict):
@@ -131,13 +134,14 @@ def gatherData(globalConfigObj):
         for (studentInfo, grades) in data:
             try:
                 studentID = getStudentID(studentAttrDict, primaryAttr, roster, studentInfo)
-                mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID)
-                for (k,v) in grades.items():
-                    oldGrade = roster[primaryAttr][studentID][GRADES_KEY].get(k,(-float('inf'), None))
-                    # Always keep the highest grade for each assignment (TODO: replace with more flexible policy?)
-                    roster[primaryAttr][studentID][GRADES_KEY][k] = max(oldGrade, v)
             except UnidentifiableStudentException:
                 logger.warning(f"could not identify student ({studentInfo})")
+                continue
+            mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID)
+            for (k,v) in grades.items():
+                oldGrade = roster[primaryAttr][studentID][GRADES_KEY].get(k,(-float('inf'), None))
+                # Always keep the highest grade for each assignment (TODO: replace with more flexible policy?)
+                roster[primaryAttr][studentID][GRADES_KEY][k] = max(oldGrade, v)
 
     return (roster[primaryAttr], allAssignments)
 
