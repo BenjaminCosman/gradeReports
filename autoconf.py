@@ -1,4 +1,4 @@
-import json, re, argparse, glob
+import re, argparse, glob
 from enum import Enum
 from pathlib import Path
 import pyexcel as pe
@@ -13,6 +13,7 @@ logger.setLevel(logging.DEBUG)
 from lib.fileFormats import getRows
 from lib.mung import checkAndClean
 from lib.constants import ASSIGNMENTS_KEY, ALL_DEFAULT_FILTERS
+from lib.config import loadConfig, saveConfig
 
 FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM CLICKERS OTHER')
 
@@ -192,10 +193,9 @@ def updateConfig(globalConfigObj, sourceConf, rows):
     globalConfigObj["sources"].append(sourceConf)
 
 
-def main(sources, partialConfig, outPath):
-    if partialConfig:
-        with open(partialConfig) as f:
-            globalConfigObj = json.load(f)
+def main(sources, configInFilename, configOutFilename):
+    if configInFilename:
+        globalConfigObj = loadConfig(configInFilename)
     else:
         globalConfigObj = {}
 
@@ -266,8 +266,8 @@ def main(sources, partialConfig, outPath):
     oldCategories = set(map(lambda z: z['from'], globalConfigObj['outputs']['content']))
     globalConfigObj['outputs']['content'] += [{ "title": f"[Rename me - display name of {c}]", "from": c} for c in categories.difference(oldCategories)]
 
-    outPath.write_text(json.dumps(globalConfigObj, indent=2, separators=(',', ': ')))
-    logger.info(f"Wrote config file to `{outPath}`")
+    saveConfig(configOutFilename, globalConfigObj)
+    logger.info(f"Wrote config file to `{configOutFilename}`")
 
 def getSource(sourceObj):
     filename = sourceObj["file"]
@@ -291,4 +291,4 @@ if __name__ == "__main__":
     parser.add_argument('-i', metavar='CONFIG_FILE', type=str, help='An initial config file to add to')
     parser.add_argument('-o', metavar='OUTPUT_FILE', type=str, help='Output file (default: tempConfig.json)', default='tempConfig.json')
     args = parser.parse_args()
-    main(args.sourcesDir, args.i, Path(args.o))
+    main(args.sourcesDir, args.i, args.o)

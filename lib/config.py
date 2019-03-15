@@ -37,5 +37,6 @@ def loadConfig(filename):
 
     return configObj
 
-def saveConfig():
-    raise Exception("not yet implemented (TODO)")
+def saveConfig(filename, configObj):
+    # TODO resugaring
+    Path(filename).write_text(json.dumps(configObj, indent=2, separators=(',', ': ')))

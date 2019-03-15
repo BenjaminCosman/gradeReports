@@ -1,5 +1,4 @@
-import re, datetime
-import argparse
+import datetime, argparse
 import dateutil.parser
 from pathlib import Path
 import tqdm
@@ -35,10 +34,6 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
                 logger.info(f"skipping this field; may result in an UnidentifiableStudentException later")
         grades = {}
         for assignment in sourceConfigReader:
-            sheetName = assignment.get('sheetName', None)
-            if (sheetName != None) and (record['_sheetName'] != sheetName):
-                continue
-
             scoreCol = assignment.get('scoreCol', None)
             if scoreCol == None:
                 # Full credit for completion (i.e. being in the spreadsheet at all)
