@@ -10,7 +10,7 @@ logging.addLevelName(logging.ERROR, "\033[31m%s\033[0m" % logging.getLevelName(l
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-from lib.fileFormats import getRows
+from lib.spreadsheetReader import getRows
 from lib.mung import checkAndClean
 from lib.constants import ASSIGNMENTS_KEY, ALL_DEFAULT_FILTERS
 from lib.config import loadConfig, saveConfig

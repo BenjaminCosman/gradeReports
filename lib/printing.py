@@ -12,15 +12,23 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
     studentInfo = studentData[INFO_KEY]
     if 'Roster Name' not in studentInfo:
         return
-
-    # Print simple text report to stdout
-    print('\n--------------------------')
-    print(studentIdentifier)
     # sorts the set of clickerIDs just so it has a deterministic output that
     # we can check in the tests
     studentInfo['Clicker ID'] = sorted(list(studentInfo['Clicker ID']))
-    print(studentInfo)
-    for obj in outputConfigObj["content"]:
+
+    printTextReport(studentIdentifier, studentData, allAssignments, outputConfigObj["content"])
+    writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf)
+
+    # Convert html report to pdf report
+    if makePdf:
+        pdfkit.from_file(f'./reports/{studentIdentifier}.html', f'./reports/{studentIdentifier}.pdf')
+
+def printTextReport(studentIdentifier, studentData, allAssignments, reportConfig):
+    '''Print simple text report to stdout'''
+    print('\n--------------------------')
+    print(studentIdentifier)
+    print(studentData[INFO_KEY])
+    for obj in reportConfig:
         print(obj["title"])
         for (assignmentName, assignmentData) in allAssignments.items():
             if assignmentData['type'] == obj["from"]:
@@ -28,7 +36,9 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
                 print(f"\t{assignmentName}\t{formatScore(score)}/{assignmentData['max_points']}{formatAnnot(annot)}")
     print('--------------------------\n')
 
+def writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf):
     # Print html report to file
+    studentInfo = studentData[INFO_KEY]
     clickerIDs = studentInfo.get('Clicker ID', set())
     if len(clickerIDs) == 0:
         clickerIDtext = "Clicker ID: unknown"
@@ -49,11 +59,6 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
     reportsDir.mkdir(exist_ok=True)
     reportPath = reportsDir / f'{studentIdentifier}.html'
     reportPath.write_text(total_str)
-
-    # Convert html report to pdf report
-    if makePdf:
-        pdfkit.from_file(f'./reports/{studentIdentifier}.html', f'./reports/{studentIdentifier}.pdf')
-#############################
 
 def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
     html_str = ""
