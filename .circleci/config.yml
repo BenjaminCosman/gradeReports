@@ -49,7 +49,7 @@ jobs:
           command: |
             . venv/bin/activate
             pip install pytest
-            pytest
+            python3 -m pytest
 
       # - store_artifacts:
       #     path: test-reports
