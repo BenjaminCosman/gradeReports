@@ -17,6 +17,14 @@ from lib.config import loadConfig, saveConfig
 
 FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM CLICKERS OTHER')
 
+DEFAULT_ATTR_DICT = {
+    "Roster Name": {"onePerStudent": True},
+    "Section": {"onePerStudent": True},
+    "Email": {},
+    "Student ID": {"identifiesStudent": True, "onePerStudent": True, "filters": ["strip", "toUpper", "ucsdIDCheck"]},
+    "Clicker ID": {"identifiesStudent": True, "filters": ["strip", "remove#", "8char", "toUpper"]}
+}
+
 keywords = {
     "Roster Name": [r'name\b'],
     "Section": [r'\bsection\b', r'\bsect\b', r'\bsec\b'],
@@ -58,7 +66,7 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
     if len(set(fields)) != len(fields):
         logger.warning("duplicate column!")
 
-    (attrConfig, ignoredCols) = guessAttrConfig(fields, allAttrs)
+    (attrConfig, ignoredAttrCols) = guessAttrConfig(fields, allAttrs)
     if len(attrConfig.keys()) == 0:
         logger.debug("  No student attributes detected; ignoring")
         return False
@@ -67,7 +75,7 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
 
     if fileType in [FileType.OTHER, FileType.CLICKERS]:
         for item in fields:
-            if item not in ignoredCols and item not in attrConfig.keys():
+            if item not in ignoredAttrCols and item not in attrConfig.keys():
                 filters = ALL_DEFAULT_FILTERS
                 # try:
                 #     [float(checkAndClean(row[item], filters)) for row in rows]
@@ -99,7 +107,7 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
         # "_autoconf_fileType": fileType.name,
         "attributes": attrConfig,
         ASSIGNMENTS_KEY: itemConfig, #[NoIndent(x) for x in itemConfig],
-        # "_autoconf_ignoredCols": ignoredCols
+        # "_autoconf_ignoredAttrCols": ignoredAttrCols
     })
     return True
 
@@ -116,32 +124,32 @@ def guessAttrConfig(potentialAttrFields, allAttrs):
             keywordLookup.update({keyword:attr for keyword in keywords[attr]})
 
     attrConfig = {}
-    ignoredCols = []
+    ignoredAttrCols = []
+    attrsLowered = [attr.lower() for attr in allAttrs]
     for item in potentialAttrFields:
-        itemLowered = item.lower()
-
-        # First, check if the column name is referring to a student attribute
+        # Check if the column name is referring to a student attribute
         identifiedAttr = None
-        if itemLowered in [attr.lower() for attr in allAttrs]:
+        itemLowered = item.lower()
+        if itemLowered in attrsLowered:
             identifiedAttr = item
         else:
-            # itemWords = itemLowered.split()
             for (keyword, attr) in keywordLookup.items():
                 if re.search(keyword, itemLowered):
                     identifiedAttr = attr
                     break
 
-        # If so, record it and move on to next column
-        if identifiedAttr is not None:
-            if identifiedAttr in attrConfig.values():
-                old = next(key for key, value in attrConfig.items() if value == identifiedAttr)
-                logger.warning(f"found two columns for attribute {identifiedAttr}: `{old}` and `{item}`")
-                ignoredCols.append(item)
-            elif allAttrs[identifiedAttr].get("identifiesStudent", False):
-                attrConfig.update({item: identifiedAttr})
-            else:
-                ignoredCols.append(item)
-    return (attrConfig, ignoredCols)
+        if identifiedAttr == None:
+            continue
+
+        if identifiedAttr in attrConfig.values():
+            old = next(key for key, value in attrConfig.items() if value == identifiedAttr)
+            logger.warning(f"found two columns for attribute {identifiedAttr}: `{old}` and `{item}`")
+            ignoredAttrCols.append(item)
+        elif allAttrs[identifiedAttr].get("identifiesStudent", False):
+            attrConfig.update({item: identifiedAttr})
+        else:
+            ignoredAttrCols.append(item)
+    return (attrConfig, ignoredAttrCols)
 
 def updateGradescopeConfig(allAttrs, sourceConf, rows):
     fields = rows[0].keys()
@@ -153,7 +161,7 @@ def updateGradescopeConfig(allAttrs, sourceConf, rows):
         elif " - Max Points" not in field and " - Lateness" not in field:
             attrs.append(field)
 
-    (attrConfig, ignoredCols) = guessAttrConfig(attrs, allAttrs)
+    (attrConfig, _) = guessAttrConfig(attrs, allAttrs)
 
     itemConfig = []
     for item in assignments:
@@ -200,13 +208,7 @@ def main(sources, configInFilename, configOutFilename):
         globalConfigObj = {}
 
     if "studentAttributes" not in globalConfigObj:
-        globalConfigObj["studentAttributes"] = {
-            "Roster Name": {"onePerStudent": True},
-            "Section": {"onePerStudent": True},
-            "Email": {},
-            "Student ID": {"identifiesStudent": True, "onePerStudent": True, "filters": ["strip", "toUpper", "ucsdIDCheck"]},
-            "Clicker ID": {"identifiesStudent": True, "filters": ["strip", "remove#", "8char", "toUpper"]}
-        }
+        globalConfigObj["studentAttributes"] = DEFAULT_ATTR_DICT
     if "sources" not in globalConfigObj:
         globalConfigObj["sources"] = []
     if "outputs" not in globalConfigObj:
