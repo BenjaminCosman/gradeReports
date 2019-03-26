@@ -59,8 +59,8 @@ def inferTypeFromFields(fields):
 
     return FileType.OTHER
 
-def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
-    '''updates sourceConf in place. Returns True if successful; False if the
+def updateOtherConfig(allAttrs, sourceConf, rows, fileType, allNames):
+    '''updates sourceConf and allNames in place. Returns True if successful; False if the
     file could not be used (i.e. appeared to contain no grade data)'''
     fields = rows[0].keys()
     if len(set(fields)) != len(fields):
@@ -85,7 +85,8 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
                     itemType = "clickers"
                 else:
                     itemType = guessItemType(item)
-                itemConfig.append({"name": item, "scoreCol": item, "max_points": 1, "type": itemType, "filters": filters})
+                name = forceUniqueName(item, allNames)
+                itemConfig.append({"name": name, "scoreCol": item, "max_points": 1, "type": itemType, "filters": filters})
 
     if fileType == FileType.SCORED_GOOGLE_FORM:
         row = rows[0]
@@ -96,12 +97,14 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
         else:
             maxPoints = max([int(x['Score']) for x in rows])
             # filters = []
-        name = sourceConf.get("sheetName", Path(sourceConf['file']).name)
+        name = sourceConf.get("sheetName") or Path(sourceConf['file']).stem
+        name = forceUniqueName(name, allNames)
         itemConfig.append({"name": name, "scoreCol": "Score", "max_points": maxPoints, "type": fileType.name, "filters": ALL_DEFAULT_FILTERS, "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
     if fileType == FileType.UNSCORED_GOOGLE_FORM:
-        name = sourceConf.get("sheetName", Path(sourceConf['file']).name)
-        itemConfig.append({"name": name, "max_points": 1, "type": fileType.name, "filters": [], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
+        name = sourceConf.get("sheetName") or Path(sourceConf['file']).stem
+        name = forceUniqueName(name, allNames)
+        itemConfig.append({"name": name, "max_points": 1, "type": fileType.name, "filters": ALL_DEFAULT_FILTERS, "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
     sourceConf.update({
         # "_autoconf_fileType": fileType.name,
@@ -110,6 +113,21 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
         # "_autoconf_ignoredAttrCols": ignoredAttrCols
     })
     return True
+
+def forceUniqueName(name, allNames):
+    uniqueName = getUniqueName(name, allNames)
+    allNames.add(uniqueName)
+    return uniqueName
+
+def getUniqueName(name, allNames):
+    if name not in allNames:
+        return name
+    idx = 2
+    while True:
+        testName = name + "#" + str(idx)
+        if testName not in allNames:
+            return testName
+        idx += 1
 
 def guessItemType(item):
     item = item.lower()
@@ -151,7 +169,7 @@ def guessAttrConfig(potentialAttrFields, allAttrs):
             ignoredAttrCols.append(item)
     return (attrConfig, ignoredAttrCols)
 
-def updateGradescopeConfig(allAttrs, sourceConf, rows):
+def updateGradescopeConfig(allAttrs, sourceConf, rows, allNames):
     fields = rows[0].keys()
     assignments = []
     attrs = []
@@ -167,14 +185,15 @@ def updateGradescopeConfig(allAttrs, sourceConf, rows):
     for item in assignments:
         itemType = guessItemType(item)
         maxPoints = int(rows[0][item + " - Max Points"])
-        itemConfig.append({"name": item, "scoreCol": item, "max_points": maxPoints, "type": itemType, "filters": ALL_DEFAULT_FILTERS}) #["NoneTo0"]})
+        name = forceUniqueName(item, allNames)
+        itemConfig.append({"name": name, "scoreCol": item, "max_points": maxPoints, "type": itemType, "filters": ALL_DEFAULT_FILTERS}) #["NoneTo0"]})
 
     sourceConf.update({
         "attributes": attrConfig,
         ASSIGNMENTS_KEY: itemConfig,
     })
 
-def updateConfig(globalConfigObj, sourceConf, rows):
+def updateConfig(globalConfigObj, sourceConf, rows, allNames):
     fileType = inferTypeFromFields(list(rows[0].keys()))
     logger.debug(f"\tInferred type: {fileType.name}")
     if fileType == FileType.ROSTER:
@@ -190,9 +209,9 @@ def updateConfig(globalConfigObj, sourceConf, rows):
             ASSIGNMENTS_KEY: []
         })
     elif fileType == FileType.GRADESCOPE:
-        updateGradescopeConfig(globalConfigObj['studentAttributes'], sourceConf, rows)
+        updateGradescopeConfig(globalConfigObj['studentAttributes'], sourceConf, rows, allNames)
     elif fileType in [FileType.SCORED_GOOGLE_FORM, FileType.UNSCORED_GOOGLE_FORM, FileType.CLICKERS, FileType.OTHER]:
-        usable = updateOtherConfig(globalConfigObj['studentAttributes'], sourceConf, rows, fileType)
+        usable = updateOtherConfig(globalConfigObj['studentAttributes'], sourceConf, rows, fileType, allNames)
         if not usable:
             return
     else:
@@ -220,6 +239,7 @@ def main(sources, configInFilename, configOutFilename):
 
     # ignoredFiles = globalConfigObj.get("_autoconf_ignoredFiles", [])
     preconfiguredFiles = list(map(getSource, globalConfigObj["sources"]))
+    allNames = set()
     for inFile in sources:
         inFilePath = Path(inFile)
         if inFilePath.is_dir():
@@ -253,7 +273,7 @@ def main(sources, configInFilename, configOutFilename):
                     continue
                 rows = getRows(filePath, sheetName=sheetName)
                 sourceConf = {"file": str(filePath), "sheetName": sheetName}
-                updateConfig(globalConfigObj, sourceConf, rows)
+                updateConfig(globalConfigObj, sourceConf, rows, allNames)
 
     globalConfigObj["sources"].sort(key=mySort)
 
