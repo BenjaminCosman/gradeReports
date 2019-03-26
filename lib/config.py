@@ -5,7 +5,7 @@
 import json, copy
 from pathlib import Path
 
-from lib.constants import ASSIGNMENTS_KEY
+from lib.constants import ASSIGNMENTS_KEY, ALL_DEFAULT_FILTERS
 
 def loadConfig(filename):
     configObj = json.loads(Path(filename).read_text())
@@ -38,5 +38,9 @@ def loadConfig(filename):
     return configObj
 
 def saveConfig(filename, configObj):
-    # TODO resugaring
-    Path(filename).write_text(json.dumps(configObj, indent=2, separators=(',', ': ')))
+    newConfig = copy.deepcopy(configObj)
+    for obj in newConfig['sources']:
+        for assignment in obj['assignments']:
+            if assignment['filters'] == ALL_DEFAULT_FILTERS:
+                del assignment['filters']
+    Path(filename).write_text(json.dumps(newConfig, indent=2, separators=(',', ': ')))

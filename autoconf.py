@@ -92,12 +92,12 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
         score = row['Score']
         if '/' in score:
             maxPoints = int(score.split('/')[1].strip())
-            filters = ["stripDenominator"]
+            # filters = ["stripDenominator"]
         else:
             maxPoints = max([int(x['Score']) for x in rows])
-            filters = []
+            # filters = []
         name = sourceConf.get("sheetName", Path(sourceConf['file']).name)
-        itemConfig.append({"name": name, "scoreCol": "Score", "max_points": maxPoints, "type": fileType.name, "filters": ["stripDenominator"], "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
+        itemConfig.append({"name": name, "scoreCol": "Score", "max_points": maxPoints, "type": fileType.name, "filters": ALL_DEFAULT_FILTERS, "due_date": "12/31/9999 23:59:59", "timestampCol": "Timestamp"})
 
     if fileType == FileType.UNSCORED_GOOGLE_FORM:
         name = sourceConf.get("sheetName", Path(sourceConf['file']).name)
@@ -167,7 +167,7 @@ def updateGradescopeConfig(allAttrs, sourceConf, rows):
     for item in assignments:
         itemType = guessItemType(item)
         maxPoints = int(rows[0][item + " - Max Points"])
-        itemConfig.append({"name": item, "scoreCol": item, "max_points": maxPoints, "type": itemType, "filters": ["NoneTo0"]})
+        itemConfig.append({"name": item, "scoreCol": item, "max_points": maxPoints, "type": itemType, "filters": ALL_DEFAULT_FILTERS}) #["NoneTo0"]})
 
     sourceConf.update({
         "attributes": attrConfig,
@@ -220,45 +220,41 @@ def main(sources, configInFilename, configOutFilename):
 
     # ignoredFiles = globalConfigObj.get("_autoconf_ignoredFiles", [])
     preconfiguredFiles = list(map(getSource, globalConfigObj["sources"]))
-    for source in sources:
-        sourcePath = Path(source)
-        if sourcePath.is_dir():
-            logger.debug(f"Searching `{sourcePath}` for csv and xlsx files...")
-            sourceIter = glob.iglob(str(sourcePath/'**'), recursive=True)
+    for inFile in sources:
+        inFilePath = Path(inFile)
+        if inFilePath.is_dir():
+            logger.debug(f"Recursively searching `{inFilePath}` for csv and xlsx files...")
+            fileIter = glob.iglob(str(inFilePath/'**'), recursive=True)
         else:
-            sourceIter = [source]
-        sourceIter = [Path(filename) for filename in sourceIter]
-        for filePath in sourceIter:
+            fileIter = [inFile]
+        fileIter = [Path(filename) for filename in fileIter]
+        for filePath in fileIter:
             if filePath.is_dir():
                 continue
-            logger.debug(f"Handling file `{filePath}`")
             # if filename in ignoredFiles:
             #     print("Skipping because of _autoconf_ignoredFiles")
             #     continue
-            if str(filePath) in preconfiguredFiles:
-                logger.debug("Skipping because file is already configured")
-                continue
+
             ext = filePath.suffix
             if ext == ".csv":
-                rows = getRows(filePath)
-                sourceConf = {"file": str(filePath)}
-                updateConfig(globalConfigObj, sourceConf, rows)
+                sourceIter = [(filePath, None)]
             elif ext == ".xlsx":
-                book = pe.get_book(file_name=str(filePath), auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
-                for name in book.sheet_names():
-                    logger.debug(f"Found sheet `{name}`")
-                    # if [filename, name] in ignoredFiles:
-                    #     print("Skipping because of _autoconf_ignoredFiles")
-                    #     continue
-                    if (str(filePath), name) in preconfiguredFiles:
-                        logger.debug("Skipping because file is already configured")
-                        continue
-                    rows = getRows(filePath, sheetName=name)
-                    sourceConf = {"file": str(filePath), "sheetName": name}
-                    updateConfig(globalConfigObj, sourceConf, rows)
+                book = pe.get_book(file_name=str(filePath))
+                sourceIter = [(filePath, name) for name in book.sheet_names()]
             else:
                 logger.debug("  Ignoring.")
                 continue
+
+            for (filePath, sheetName) in sourceIter:
+                logger.debug(f"Handling source `{filePath}` (sheet `{sheetName}`)")
+
+                if (filePath, sheetName) in preconfiguredFiles:
+                    logger.debug("Skipping because file is already configured")
+                    continue
+                rows = getRows(filePath, sheetName=sheetName)
+                sourceConf = {"file": str(filePath), "sheetName": sheetName}
+                updateConfig(globalConfigObj, sourceConf, rows)
+
     globalConfigObj["sources"].sort(key=mySort, reverse=True)
 
     categories = set()
@@ -272,11 +268,7 @@ def main(sources, configInFilename, configOutFilename):
     logger.info(f"Wrote config file to `{configOutFilename}`")
 
 def getSource(sourceObj):
-    filename = sourceObj["file"]
-    if "sheetname" in sourceObj:
-        return (filename, sourceObj["sheetname"])
-    else:
-        return filename
+    return (sourceObj["file"], sourceObj.get("sheetname", None))
 
 # TODO: remove dependency on order of sources - right now sources that define and
 # connect student attributes should come first (e.g. roster, then clicker registrations)
