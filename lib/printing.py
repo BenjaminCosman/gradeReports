@@ -27,7 +27,8 @@ def printTextReport(studentIdentifier, studentData, allAssignments, reportConfig
     '''Print simple text report to stdout'''
     print('\n--------------------------')
     print(studentIdentifier)
-    print(studentData[INFO_KEY])
+    for item in sorted(studentData[INFO_KEY].items()):
+        print(item)
     for obj in reportConfig:
         print(obj["title"])
         for (assignmentName, assignmentData) in allAssignments.items():

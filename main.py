@@ -124,19 +124,31 @@ def gatherData(globalConfigObj):
         for assignmentData in obj[ASSIGNMENTS_KEY]:
             allAssignments[assignmentData["name"]] = assignmentData
 
+    data = []
     for obj in sourceConfigList:
-        data = sourceToGrades(obj, studentAttrDict)
+        data += sourceToGrades(obj, studentAttrDict)
+
+    while True:
+        newDataMerged = False
+        failedToMerge = []
         for (studentInfo, grades) in data:
             try:
                 studentID = getStudentID(studentAttrDict, primaryAttr, roster, studentInfo)
             except UnidentifiableStudentException:
-                logger.warning(f"could not identify student ({studentInfo})")
+                failedToMerge.append((studentInfo, grades))
                 continue
+            newDataMerged = True
             mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID)
             for (k,v) in grades.items():
                 oldGrade = roster[primaryAttr][studentID][GRADES_KEY].get(k,(-float('inf'), None))
                 # Always keep the highest grade for each assignment (TODO: replace with more flexible policy?)
                 roster[primaryAttr][studentID][GRADES_KEY][k] = max(oldGrade, v)
+        if newDataMerged == False or len(failedToMerge) == 0:
+            break
+        data = failedToMerge[:]
+
+    for (studentInfo, _) in failedToMerge:
+        logger.warning(f"could not identify student ({studentInfo})")
 
     return (roster[primaryAttr], allAssignments)
 
