@@ -8,36 +8,12 @@
   },
   "sources": [
     {
-      "file": "examples/data/Roster.csv",
-      "isRoster": true,
-      "attributes": {
-        "Email": "Email",
-        "PID": "Student ID",
-        "Student": "Roster Name"
-      },
-      "assignments": []
-    },
-    {
       "file": "examples/data/clickerRegistrations.csv",
       "attributes": {
         "Your PID": "Student ID",
         "Your iclicker ID": "Clicker ID"
       },
       "assignments": []
-    },
-    {
-      "file": "examples/data/UploadFile.csv",
-      "attributes": {
-        "Remote ID": "Clicker ID"
-      },
-      "assignments": [
-        {"name": "10/1", "scoreCol": "Session 1 Participation 10/1/2018", "max_points": 1, "type": "in-class-participation"},
-        {"name": "10/3", "scoreCol": "Session 2 Participation 10/3/2018", "max_points": 1, "type": "in-class-participation"},
-        {"name": "10/5", "scoreCol": "Session 3 Participation 10/5/2018", "max_points": 1, "type": "in-class-participation"},
-        {"name": "10/8", "scoreCol": "Session 4 Participation 10/8/2018", "max_points": 1, "type": "in-class-participation"},
-        {"name": "10/10", "scoreCol": "Session 5 Participation 10/10/2018", "max_points": 1, "type": "in-class-participation"},
-        {"name": "10/12", "scoreCol": "Session 6 Participation 10/12/2018", "max_points": 1, "type": "in-class-participation"}
-      ]
     },
     {
       "file": "examples/data/CSE777_Fall_2018_grades.csv",
@@ -47,25 +23,6 @@
       "assignments": [
         {"name": "HW-1", "scoreCol": "HW 1", "max_points": 32, "type": "homework"},
         {"name": "HW-2", "scoreCol": "HW 2", "max_points": 17, "type": "homework"}
-      ]
-    },
-    {
-      "file": "examples/data/ReviewQuizzes.xlsx",
-      "attributes": {
-        "PID": "Student ID"
-      },
-      "assignments": [
-        {"name": "Week1", "sheetName": "Week1", "scoreCol": "Score", "max_points": 2, "type": "review-quiz", "due_date": "10/3/2018 23:59:59", "timestampCol": "Timestamp"},
-        {"name": "Week2", "sheetName": "Week2", "scoreCol": "Score", "max_points": 3, "type": "review-quiz", "due_date": "10/10/2018 23:59:59", "timestampCol": "Timestamp"}
-      ]
-    },
-    {
-      "file": "examples/data/PreClassSurvey.csv",
-      "attributes": {
-        "PID": "Student ID"
-      },
-      "assignments": [
-        {"name": "Pre-class Survey", "max_points": 1, "type": "survey", "due_date": "10/20/2018 23:59:59", "timestampCol": "Timestamp"}
       ]
     },
     {
@@ -92,6 +49,49 @@
         {"name": "Week 1", "scoreCol": "Week 1", "max_points": 1, "type": "discussion"},
         {"name": "Week 2", "scoreCol": "Week 2", "max_points": 1, "type": "discussion"},
         {"name": "Week 3", "scoreCol": "Week 3", "max_points": 1, "type": "discussion"}
+      ]
+    },
+    {
+      "file": "examples/data/PreClassSurvey.csv",
+      "attributes": {
+        "PID": "Student ID"
+      },
+      "assignments": [
+        {"name": "Pre-class Survey", "max_points": 1, "type": "survey", "due_date": "10/20/2018 23:59:59", "timestampCol": "Timestamp"}
+      ]
+    },
+    {
+      "file": "examples/data/ReviewQuizzes.xlsx",
+      "attributes": {
+        "PID": "Student ID"
+      },
+      "assignments": [
+        {"name": "Week1", "sheetName": "Week1", "scoreCol": "Score", "max_points": 2, "type": "review-quiz", "due_date": "10/3/2018 23:59:59", "timestampCol": "Timestamp"},
+        {"name": "Week2", "sheetName": "Week2", "scoreCol": "Score", "max_points": 3, "type": "review-quiz", "due_date": "10/10/2018 23:59:59", "timestampCol": "Timestamp"}
+      ]
+    },
+    {
+      "file": "examples/data/Roster.csv",
+      "isRoster": true,
+      "attributes": {
+        "Email": "Email",
+        "PID": "Student ID",
+        "Student": "Roster Name"
+      },
+      "assignments": []
+    },
+    {
+      "file": "examples/data/UploadFile.csv",
+      "attributes": {
+        "Remote ID": "Clicker ID"
+      },
+      "assignments": [
+        {"name": "10/1", "scoreCol": "Session 1 Participation 10/1/2018", "max_points": 1, "type": "in-class-participation"},
+        {"name": "10/3", "scoreCol": "Session 2 Participation 10/3/2018", "max_points": 1, "type": "in-class-participation"},
+        {"name": "10/5", "scoreCol": "Session 3 Participation 10/5/2018", "max_points": 1, "type": "in-class-participation"},
+        {"name": "10/8", "scoreCol": "Session 4 Participation 10/8/2018", "max_points": 1, "type": "in-class-participation"},
+        {"name": "10/10", "scoreCol": "Session 5 Participation 10/10/2018", "max_points": 1, "type": "in-class-participation"},
+        {"name": "10/12", "scoreCol": "Session 6 Participation 10/12/2018", "max_points": 1, "type": "in-class-participation"}
       ]
     }
   ],

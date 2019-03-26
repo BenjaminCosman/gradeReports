@@ -114,7 +114,7 @@ def updateOtherConfig(allAttrs, sourceConf, rows, fileType):
 def guessItemType(item):
     item = item.lower()
     if "hw" in item or "assignment" in item or "homework" in item:
-        return "Homework"
+        return "homework"
     return "unknown"
 
 def guessAttrConfig(potentialAttrFields, allAttrs):
@@ -242,7 +242,7 @@ def main(sources, configInFilename, configOutFilename):
                 book = pe.get_book(file_name=str(filePath))
                 sourceIter = [(filePath, name) for name in book.sheet_names()]
             else:
-                logger.debug("  Ignoring.")
+                logger.debug(f"Ignoring non-csv/xlsx file: `{filePath}`.")
                 continue
 
             for (filePath, sheetName) in sourceIter:
@@ -255,7 +255,7 @@ def main(sources, configInFilename, configOutFilename):
                 sourceConf = {"file": str(filePath), "sheetName": sheetName}
                 updateConfig(globalConfigObj, sourceConf, rows)
 
-    globalConfigObj["sources"].sort(key=mySort, reverse=True)
+    globalConfigObj["sources"].sort(key=mySort)
 
     categories = set()
     for sourceData in globalConfigObj['sources']:
@@ -268,15 +268,10 @@ def main(sources, configInFilename, configOutFilename):
     logger.info(f"Wrote config file to `{configOutFilename}`")
 
 def getSource(sourceObj):
-    return (sourceObj["file"], sourceObj.get("sheetname", None))
+    return (sourceObj["file"], sourceObj.get("sheetName", None))
 
-# TODO: remove dependency on order of sources - right now sources that define and
-# connect student attributes should come first (e.g. roster, then clicker registrations)
 def mySort(obj):
-    return (
-        "isRoster" in obj,
-        len(obj["attributes"])
-    )
+    return (obj["file"].lower(), obj["sheetName"])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -43,4 +43,6 @@ def saveConfig(filename, configObj):
         for assignment in obj['assignments']:
             if assignment['filters'] == ALL_DEFAULT_FILTERS:
                 del assignment['filters']
+        if obj['sheetName'] == None:
+            del obj['sheetName']
     Path(filename).write_text(json.dumps(newConfig, indent=2, separators=(',', ': ')))
