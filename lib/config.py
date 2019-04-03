@@ -49,16 +49,8 @@ def saveConfig(filename, configObj):
     '''shouldn't modify configObj but TODO probably does'''
     newConfig = copy.deepcopy(configObj)
 
-    # Remove default filters and sheetName values
-    for obj in newConfig['sources']:
-        for assignment in obj['assignments']:
-            if assignment['filters'] == ALL_DEFAULT_FILTERS:
-                del assignment['filters']
-        if obj['sheetName'] == None:
-            del obj['sheetName']
-
     # Collapse xlsx sources from the same file if possible
-    xlsxSources = [(obj['file'], obj.get('sheetName', None)) for obj in newConfig['sources'] if Path(obj['file']).suffix == '.xlsx']
+    xlsxSources = [(obj['file'], obj['sheetName']) for obj in newConfig['sources'] if Path(obj['file']).suffix == '.xlsx']
     xlsxSources.sort()
     groups = itertools.groupby(xlsxSources, lambda x: x[0])
     for (fileName, sourceIter) in groups:
@@ -76,6 +68,14 @@ def saveConfig(filename, configObj):
         oldFirstIdx = [i for (i,x) in enumerate(newConfig['sources']) if x['file'] == fileName][0]
         newConfig['sources'] = [x for x in newConfig['sources'] if x['file'] != fileName]
         newConfig['sources'].insert(oldFirstIdx, newSourceConfig)
+
+    # Remove default filters and sheetName values
+    for obj in newConfig['sources']:
+        for assignment in obj['assignments']:
+            if assignment['filters'] == ALL_DEFAULT_FILTERS:
+                del assignment['filters']
+        if obj['sheetName'] == None:
+            del obj['sheetName']
 
     Path(filename).write_text(json.dumps(newConfig, indent=2, separators=(',', ': ')))
 

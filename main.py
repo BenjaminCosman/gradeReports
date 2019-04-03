@@ -19,7 +19,7 @@ from lib.config import loadConfig
 def sourceToGrades(sourceConfigObj, studentAttrDict):
     '''returns [(Student, [Grade])]'''
     sourcePath = Path(sourceConfigObj['file'])
-    rows = getRows(sourcePath, isRoster=sourceConfigObj.get("isRoster", False), sheetName=sourceConfigObj.get("sheetName", None))
+    rows = getRows(sourcePath, isRoster=sourceConfigObj.get("isRoster", False), sheetName=sourceConfigObj["sheetName"])
     identDict = sourceConfigObj["attributes"]
     sourceConfigReader = sourceConfigObj[ASSIGNMENTS_KEY]
     outputList = []
