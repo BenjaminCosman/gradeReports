@@ -11,7 +11,7 @@ from lib.constants import ASSIGNMENTS_KEY, ALL_DEFAULT_FILTERS
 def loadConfig(filename):
     configObj = json.loads(Path(filename).read_text())
 
-    # Canonicalize studentAttributes dict with defaults
+    # Add various default values
     for (k,v) in configObj["studentAttributes"].items():
         if "identifiesStudent" not in v:
             v["identifiesStudent"] = False
@@ -19,11 +19,17 @@ def loadConfig(filename):
             v["onePerStudent"] = False
         if "filters" not in v:
             v["filters"] = []
+    for sourceObj in configObj['sources']:
+        if 'sheetName' not in sourceObj:
+            sourceObj['sheetName'] = None
+        for assignment in sourceObj['assignments']:
+            if 'filters' not in assignment:
+                assignment['filters'] = ALL_DEFAULT_FILTERS
 
     # Turn multi-sheet xlsx sources into multiple single-sheet ones
     newSources = []
     for sourceObj in configObj['sources']:
-        if Path(sourceObj['file']).suffix != '.xlsx' or 'sheetName' in sourceObj:
+        if Path(sourceObj['file']).suffix != '.xlsx' or sourceObj['sheetName'] != None:
             newSources.append(sourceObj)
         else:
             usedSheets = [item['sheetName'] for item in sourceObj[ASSIGNMENTS_KEY]]
@@ -41,9 +47,9 @@ def loadConfig(filename):
 
 def saveConfig(filename, configObj):
     '''shouldn't modify configObj but TODO probably does'''
+    newConfig = copy.deepcopy(configObj)
 
     # Remove default filters and sheetName values
-    newConfig = copy.deepcopy(configObj)
     for obj in newConfig['sources']:
         for assignment in obj['assignments']:
             if assignment['filters'] == ALL_DEFAULT_FILTERS:

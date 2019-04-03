@@ -266,9 +266,9 @@ def main(sources, configInFilename, configOutFilename):
                 continue
 
             for (filePath, sheetName) in sourceIter:
-                logger.debug(f"Handling source `{filePath}` (sheet `{sheetName}`)")
+                logger.debug(f"Handling source `{filePath}`{' (sheet '+sheetName+')' if sheetName else ''}")
 
-                if (filePath, sheetName) in preconfiguredFiles:
+                if (str(filePath), sheetName) in preconfiguredFiles:
                     logger.debug("Skipping because file is already configured")
                     continue
                 rows = getRows(filePath, sheetName=sheetName)
