@@ -20,6 +20,10 @@ fashion, where it takes in an existing config file as well and adds to it.
 
 Requires Python. (possibly even Python 3.7.2+ ?)
 
+### Clone the repository
+
+`git clone https://github.com/BenjaminCosman/gradeReports.git`
+
 ### Recommended: set up a virtual environment
 
 `python3 -m venv .venv`
