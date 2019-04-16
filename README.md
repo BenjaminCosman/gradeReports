@@ -74,7 +74,7 @@ These are quick to fix manually:
 - Find and delete unwanted assignments in the middle. For example, to remove weeks 4-10 of discussion attendance, find and delete the objects containing the text `Week 4`, `Week 5`, etc. *Make sure the resulting config file is still valid JSON: in particular, the last element of a list needs to NOT have a comma after it (and each other element does need a comma)*
 - For any assignment where a Timestamp column was detected, autoconf has inserted a `due_date` field in the distant future. If there is a deadline you want to enforce, change these fields; late assignemnts will get 0 credit.
 
-That's it for the most important features; at this point you should be able to generate a real report using your own data.
+After editing the file you can re-generate the reports (`python3 main.py tempConfig.json`) and you should see your changes reflected there. That's it for the most important features; at this point you should be able to generate a real report using your own data.
 
 COMING SOON:
 
