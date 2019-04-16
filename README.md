@@ -35,25 +35,63 @@ installation as well as whenever you run the scripts:)
 
 ### Testing your installation
 
-There is an example class in `examples`. Generate reports for that class:
+Check if the commands in the first few steps of the tutorial work (see below).
 
-`python3 main.py examples/config.json`
+## Tutorial
 
-This should dump simplified text versions of the reports to your terminal, and
-also produce reports suitable for distribution in a `reports` folder.
+It is week 3 of the fictional class CSE777, and we'd like to generate a preliminary progress report for our students. We've already downloaded all relevant files to local folder `examples/data`: the roster, gradescope gradebook, iclicker and discussion attendance spreadsheets, and google forms responses for quizzes, surveys, and clicker registrations.
 
-## Running
+1. Later steps will show you how to produce a config file, but for now we'll use the one at `examples/config.json`. Once we have this config file, all we need to do to generate reports is run:
+
+`python3 main.py examples/config.json --pdf`
+
+You should see simplified text versions of the reports on your terminal, and formatted reports suitable for distribution in a `reports` folder.
+(The suggested way to distribute these reports would be to upload them all to gradescope as a 0-point assignment; gradescope can automatically match the files with students using the name and student ID fields.)
+
+2. Now we will work backwards and produce that config file needed for step 1. Run:
+
+`python3 autoconf.py examples/data`
+
+This will produce a config file at `tempConfig.json`. Now try using it as in step 1 (except since we're not uploading these reports, there's no need to spend the time converting the html reports to pdfs so we leave out the `--pdf` option from now on):
+
+`python3 main.py tempConfig.json`
+
+Open one of the generated reports (e.g. `reports/A12345678.html`). It  should look mostly correct and ready for distribution, with a few exceptions:
+
+- There are some extra assignments, like clickerRegistrations, and discussion attendance through week 10.
+- All headers and some assignments need to be renamed.
+
+These are quick to fix manually:
+
+- Open `tempConfig.json`
+- At the bottom of the file (`outputs` -> `content`), rename the `title` values.
+- Find and delete unwanted assignments in the middle. For example, to remove weeks 4-10 of discussion attendance, find and delete the objects containing the text `Week 4`, `Week 5`, etc. *Make sure the resulting config file is still valid JSON: in particular, the last element of a list needs to NOT have a comma after it (and each other element does need a comma)*
+- For any assignment where a Timestamp column was detected, autoconf has inserted a `due_date` field in the distant future. If there is a deadline you want to enforce, change these fields; late assignemnts will get 0 credit.
+
+That's it for the most important features; at this point you should be able to generate a real report using your own data.
+
+COMING SOON:
+
+1. Now it's week 5 and you need a config file that includes the last two weeks of assignments. TODO Right now *incremental* autoconfigure doesn't work well, so either edit your old config manually or create a brand new one with autoconf.py and edit that one. Soon however you will be able to automatically update your old config using
+
+`python3 main.py -i oldConfig.json`
+
+## Documentation in non-tutorial format
+
+### Running
 
 Once you already have your sources and a config file, just run
 
 `python3 main.py CONFIG_FILE`
 
-## Configuration
+### Configuration
 
 First download all sources. Now you need to create a JSON config file. Full
 documentation follows, but the easiest way to do this may be to just run autoconf:
 
-`python3 autoconf.py SOURCE_FOLDER` or `python3 autoconf.py SOURCE1 SOURCE2 ...`
+`python3 autoconf.py SOURCE1 SOURCE2 ...`
+
+where each SOURCE is either a csv/xlsx file or a folder containing such files.
 
 This will create a config file at `tempConfig.json` (use `-o` to choose a
 different output filename). Then as long as your sources were formatted in ways
