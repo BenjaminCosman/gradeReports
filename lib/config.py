@@ -63,13 +63,16 @@ def saveConfig(filename, configObj):
 
         allAssignments = list(itertools.chain.from_iterable([addSheetName(x['assignments'], x['sheetName']) for x in sourceConfigObjs]))
         newSourceConfig = copy.deepcopy(sourceConfigObjs[0])
-        del newSourceConfig['sheetName']
+        newSourceConfig['sheetName'] = None
         newSourceConfig['assignments'] = allAssignments
         oldFirstIdx = [i for (i,x) in enumerate(newConfig['sources']) if x['file'] == fileName][0]
         newConfig['sources'] = [x for x in newConfig['sources'] if x['file'] != fileName]
         newConfig['sources'].insert(oldFirstIdx, newSourceConfig)
 
-    # Remove default filters and sheetName values
+    # Remove some default filters and sheetName values
+    for (k,v) in newConfig["studentAttributes"].items():
+        if "filters" in v and v["filters"] == []:
+            del v["filters"]
     for obj in newConfig['sources']:
         for assignment in obj['assignments']:
             if assignment['filters'] == ALL_DEFAULT_FILTERS:
