@@ -24,12 +24,14 @@ Requires Python. (possibly even Python 3.7.2+ ?)
 
 `git clone https://github.com/BenjaminCosman/gradeReports.git`
 
+`cd gradeReports`
+
 ### Recommended: set up a virtual environment
 
 `python3 -m venv .venv`
 
-(If you do this, make sure to activate that environment for the rest of
-installation as well as whenever you run the scripts:)
+If you do this, make sure to activate that environment for the rest of
+installation as well as whenever you run the scripts:
 
 `source .venv/bin/activate` (This may vary depending on your shell)
 
