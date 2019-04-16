@@ -80,7 +80,7 @@ COMING SOON:
 
 3. Now it's week 5 and you need a config file that includes the last two weeks of assignments. TODO Right now *incremental* autoconfigure doesn't work well, so either edit your old config manually or create a brand new one with autoconf.py and edit that one. Soon however you will be able to automatically update your old config using
 
-`python3 main.py -i oldConfig.json`
+`python3 autoconf.py -i oldConfig.json`
 
 ## Documentation in non-tutorial format
 
