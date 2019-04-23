@@ -108,8 +108,8 @@ file are doing, and edit them to get the result you want.
 The example class config (`examples/config.json`) may also be useful for
 understanding these files.
 
-The config file has three parts, described in more detail in the next section. 
-- "studentAttributes" describes what non-grade information you are tracking for each student, like their name, student ID, and email. 
+The config file has three parts, described in more detail in the next section.
+- "studentAttributes" describes what non-grade information you are tracking for each student, like their name, student ID, and email.
 - "sources" describes how to read each of your raw data spreadsheets. From each row in the spreadsheet, we seek to extract information sufficient to identify one student, and then one or both of 1) additional non-grade information, and 2) one or more grades. For example, from a "clicker registration" spreadsheet we hope to identify a student by student ID and then extract a clicker ID that we can link to that student (and we are not extracting any grades). Then from a separate clickers participation spreadsheet, we identify a student by clicker ID and then extract multiple attendance scores.
 - "outputs" describes what text and grades go on the report
 
@@ -136,6 +136,7 @@ if students are asked to enter their student ids on a web form, then you may wan
 to strip off any whitespace and change any letters to uppercase. For a full list
 of filter options (and to add your own, if needed), see the definition of
 `filtersAndChecks` in `lib/munge.py`.
+- "onlyPrintIfPresent" (default: false): if set to true, then any student who does NOT have this attribute (e.g. they are not in the roster so they don't have a Roster Name) will not have their report printed.
 
 key: "sources"
 value: a list of source config objects, each of which looks like this:
@@ -169,7 +170,7 @@ value: a list of source config objects, each of which looks like this:
 - "timestampCol" (optional, used in conjunction with "due_date"): the header of the column containing submission timestamps
 
 key: "outputs"
-value: an object describing what should appear on the reports, e.g. 
+value: an object describing what should appear on the reports, e.g.
 ```
 {
   "report-name": "CSE777 Preliminary Grade Report",

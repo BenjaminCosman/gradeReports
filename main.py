@@ -152,6 +152,12 @@ def gatherData(globalConfigObj):
 
     return (roster[primaryAttr], allAssignments)
 
+def shouldPrint(printFilters, studentInfo):
+    for attr in printFilters:
+        if attr not in studentInfo:
+            return False
+    return True
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', metavar='CONFIG_FILE', type=str,
@@ -165,6 +171,11 @@ if __name__ == "__main__":
         # Attach progress bar only if generating pdfs (which is slow). Non-pdf
         # version is fast enough that progress bar is just unnecessary clutter
         students = tqdm.tqdm(students)
+    printFilters = []
+    for (k,v) in globalConfigObj["studentAttributes"].items():
+        if v.get("onlyPrintIfPresent", False):
+            printFilters.append(k)
     for (studentIdentifier, studentData) in students:
-        printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"], args.pdf)
+        if shouldPrint(printFilters, studentData[INFO_KEY]):
+            printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"], args.pdf)
     # logger.info("reports generated in folder 'reports/'")

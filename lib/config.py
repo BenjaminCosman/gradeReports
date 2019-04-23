@@ -19,6 +19,8 @@ def loadConfig(filename):
             v["onePerStudent"] = False
         if "filters" not in v:
             v["filters"] = []
+        if "onlyPrintIfPresent" not in v:
+            v["onlyPrintIfPresent"] = False
     for sourceObj in configObj['sources']:
         if 'sheetName' not in sourceObj:
             sourceObj['sheetName'] = None
@@ -69,10 +71,12 @@ def saveConfig(filename, configObj):
         newConfig['sources'] = [x for x in newConfig['sources'] if x['file'] != fileName]
         newConfig['sources'].insert(oldFirstIdx, newSourceConfig)
 
-    # Remove some default filters and sheetName values
+    # Remove some default values
     for (k,v) in newConfig["studentAttributes"].items():
         if "filters" in v and v["filters"] == []:
             del v["filters"]
+        if "onlyPrintIfPresent" in v and v["onlyPrintIfPresent"] == False:
+            del v["onlyPrintIfPresent"]
     for obj in newConfig['sources']:
         for assignment in obj['assignments']:
             if assignment['filters'] == ALL_DEFAULT_FILTERS:

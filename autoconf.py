@@ -18,7 +18,7 @@ from lib.config import loadConfig, saveConfig
 FileType = Enum('FileType', 'ROSTER GRADESCOPE SCORED_GOOGLE_FORM UNSCORED_GOOGLE_FORM CLICKERS OTHER')
 
 DEFAULT_ATTR_DICT = {
-    "Roster Name": {"onePerStudent": True},
+    "Roster Name": {"onePerStudent": True, "onlyPrintIfPresent": True},
     "Section": {"onePerStudent": True},
     "Email": {},
     "Student ID": {"identifiesStudent": True, "onePerStudent": True, "filters": ["strip", "toUpper", "ucsdIDCheck"]},

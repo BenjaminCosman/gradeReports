@@ -10,8 +10,6 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
     Given all relevant data about one student, it prints a text report
     to stdout and also dumps a html or pdf report to ./reports'''
     studentInfo = studentData[INFO_KEY]
-    if 'Roster Name' not in studentInfo:
-        return
     # sorts the set of clickerIDs just so it has a deterministic output that
     # we can check in the tests
     studentInfo['Clicker ID'] = sorted(list(studentInfo['Clicker ID']))
