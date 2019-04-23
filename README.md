@@ -108,6 +108,11 @@ file are doing, and edit them to get the result you want.
 The example class config (`examples/config.json`) may also be useful for
 understanding these files.
 
+The config file has three parts, described in more detail in the next section. 
+- "studentAttributes" describes what non-grade information you are tracking for each student, like their name, student ID, and email. 
+- "sources" describes how to read each of your raw data spreadsheets. From each row in the spreadsheet, we seek to extract information sufficient to identify one student, and then one or both of 1) additional non-grade information, and 2) one or more grades. For example, from a "clicker registration" spreadsheet we hope to identify a student by student ID and then extract a clicker ID that we can link to that student (and we are not extracting any grades). Then from a separate clickers participation spreadsheet, we identify a student by clicker ID and then extract multiple attendance scores.
+- "outputs" describes what text and grades go on the report
+
 ### The details
 
 key: "studentAttributes"
