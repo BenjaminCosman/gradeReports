@@ -133,10 +133,52 @@ of filter options (and to add your own, if needed), see the definition of
 `filtersAndChecks` in `lib/munge.py`.
 
 key: "sources"
-value: not yet documented; see `examples/config.json`
+value: a list of source config objects, each of which looks like this:
+```
+{
+  "file": FILEPATH,
+  "sheetName": SHEETNAME,
+  "isRoster": [true|false],
+  "attributes": {
+    ATTR_COLUMN1: ATTR_NAME1,
+    ...
+  },
+  "assignments": [
+    ASSIGNMENT1_CONFIG,
+    ...
+  ]
+}
+```
+
+- FILEPATH is the path to the spreadsheet file (either absolute, or relative to the directory from which you will run `main.py`).
+- SHEETNAME (optional): if source is an excel workbook, the sheet to read from
+- isRoster (optional, default=false): is the sheet formatted like a UCSD roster, i.e. has an extra mini table in the first few rows with section info
+- The "attributes" value says how to read student identifying data from the spreadsheet. For example, if the column header is "Type in your PID" and internally (see "studentAttributes" above) we call this attribute "Student ID", then the "attributes" object should include a `"Type in your PID":"Student ID"` entry.
+- Each ASSIGNMENT_CONFIG is an object with the following properties:
+- "name": the display name you want to appear on the report, e.g. "Homework 1"
+- "sheetName" (optional syntactic sugar): the sheet of the excel book to read from, specified here instead of at the top level so that you can have more than one sheet in the same source config object
+- "scoreCol" (optional): the header of the column which contains how many points were awarded. If not specified, then all students in the spreadsheet will get full credit (useful when scoring just for completion, e.g. a survey)
+- "max_points": the maximum score on the assignment
+- "type": a string of your choice representing a category name, e.g. "homework" or "exam". Will be used below (see "outputs") to organize the report by category
+- "due_date" (optional): a timestamp like "10/3/2018 23:59:59". Assignments received after this time get no credit. It is assumed this timestamp and all timestamps appearing in the spreadsheet are from the same timezone (which should NOT be specified explicitly)
+- "timestampCol" (optional, used in conjunction with "due_date"): the header of the column containing submission timestamps
 
 key: "outputs"
-value: not yet documented; see `examples/config.json`
+value: an object describing what should appear on the reports, e.g. 
+```
+{
+  "report-name": "CSE777 Preliminary Grade Report",
+  "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
+  "content": [
+    { "title": "Homework", "from": "homework" },
+    { "title": "Surveys", "from": "survey" }
+  ]
+}
+```
+
+- "report-name": will appear at the top in large font
+- "disclaimer-text": will appear next in smaller font
+- "content": a list of objects where each object specifies the display title of a category and the 'type' chosen earlier (see "type" above). All grades of the given type will appear on the report under that title; grades of types not specified here will not appear at all.
 
 ## Known issues
 
