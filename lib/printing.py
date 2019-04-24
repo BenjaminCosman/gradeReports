@@ -12,7 +12,8 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
     studentInfo = studentData[INFO_KEY]
     # sorts the set of clickerIDs just so it has a deterministic output that
     # we can check in the tests
-    studentInfo['Clicker ID'] = sorted(list(studentInfo['Clicker ID']))
+    if 'Clicker ID' in studentInfo:
+        studentInfo['Clicker ID'] = sorted(list(studentInfo['Clicker ID']))
 
     printTextReport(studentIdentifier, studentData, allAssignments, outputConfigObj["content"])
     writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf)
