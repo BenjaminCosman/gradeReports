@@ -52,10 +52,12 @@ def writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfig
         <h1>{outputConfigObj["report-name"]}</h1>
         <h2>Student Name: {studentInfo['Roster Name']} <br/>
         Student PID: {studentIdentifier} <br/>
-        {clickerIDtext}</h2><body>"""
+        {clickerIDtext}</h2>
+        <body>
+        """
     disclaimer_str = f"<div>{outputConfigObj['disclaimer-text']}</div>"
     assignments_str = get_assignmenthtml(studentData, allAssignments, outputConfigObj)
-    total_str = f'{header_str} {disclaimer_str} {assignments_str}</body></html>'
+    total_str = f'{header_str} {disclaimer_str}\n{assignments_str}</body></html>'
     reportsDir = Path('reports')
     reportsDir.mkdir(exist_ok=True)
     reportPath = reportsDir / f'{studentIdentifier}.html'
@@ -64,7 +66,7 @@ def writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfig
 def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
     html_str = ""
     for obj in outputConfigObj["content"]:
-        html_str += f"<h2>{obj['title']}</h2>"
+        html_str += f"<h2>{obj['title']}</h2>\n"
         index = 0
         for (assignmentName, assignmentData) in allAssignments.items():
             if assignmentData['type'] == obj["from"]:
@@ -72,7 +74,7 @@ def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
                 (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
                 ogscore = f"{formatScore(score)}/{assignmentData['max_points']}"
                 prefix = f"<p><b>{assignmentName}:</b> "
-                html_str += f"{prefix} {ogscore}{formatAnnot(annot)} </p>"
+                html_str += f"{prefix} {ogscore}{formatAnnot(annot)} </p>\n"
     return html_str
 
 def formatAnnot(annot):
