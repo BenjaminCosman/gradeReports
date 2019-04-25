@@ -10,10 +10,11 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
     Given all relevant data about one student, it prints a text report
     to stdout and also dumps a html or pdf report to ./reports'''
     studentInfo = studentData[INFO_KEY]
-    # sorts the set of clickerIDs just so it has a deterministic output that
+    # turns all sets into sorted lists so it has a deterministic output that
     # we can check in the tests
-    if 'Clicker ID' in studentInfo:
-        studentInfo['Clicker ID'] = sorted(list(studentInfo['Clicker ID']))
+    for (k,v) in studentInfo.items():
+        if type(v) == set:
+            studentInfo[k] = sorted(list(v))
 
     printTextReport(studentIdentifier, studentData, allAssignments, outputConfigObj["content"])
     writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf)
@@ -39,13 +40,13 @@ def printTextReport(studentIdentifier, studentData, allAssignments, reportConfig
 def writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf):
     # Print html report to file
     studentInfo = studentData[INFO_KEY]
-    clickerIDs = studentInfo.get('Clicker ID', set())
+    clickerIDs = studentInfo.get('Clicker ID', [])
     if len(clickerIDs) == 0:
         clickerIDtext = "Clicker ID: unknown"
     elif len(clickerIDs) == 1:
-        clickerIDtext = f"Clicker ID: {str(list(clickerIDs)[0])}"
+        clickerIDtext = f"Clicker ID: {clickerIDs[0]}"
     else:
-        clickerIDtext = f"Clicker IDs: {str(sorted(list(clickerIDs)))}"
+        clickerIDtext = f"Clicker IDs: {str(clickerIDs)}"
     header_str = f"""
         <html>
         <h1>{outputConfigObj["report-name"]}</h1>
