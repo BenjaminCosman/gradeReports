@@ -249,6 +249,9 @@ def main(sources, configInFilename, configOutFilename):
             fileIter = [inFile]
         fileIter = [Path(filename) for filename in fileIter]
         for filePath in fileIter:
+            if filePath.name[:2] == "~$":
+                logger.debug(f"Ignoring xlsx temporary file: `{filePath}`.")
+                continue
             if filePath.is_dir():
                 continue
             # if filename in ignoredFiles:
