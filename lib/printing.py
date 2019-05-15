@@ -77,8 +77,8 @@ def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
                 index += 1
                 (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
                 ogscore = f"{formatScore(score)}/{assignmentData['max_points']}"
-                prefix = f"<p><b>{assignmentName}:</b> "
-                html_str += f"{prefix} {ogscore}{formatAnnot(annot)} </p>\n"
+                prefix = f"<b>{assignmentName}:</b> "
+                html_str += f"{prefix} {ogscore}{formatAnnot(annot)} <br/>\n"
     return html_str
 
 def formatAnnot(annot):
