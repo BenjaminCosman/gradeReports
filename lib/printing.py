@@ -40,28 +40,32 @@ def printTextReport(studentIdentifier, studentData, allAssignments, reportConfig
 def writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf):
     # Print html report to file
     studentInfo = studentData[INFO_KEY]
-    clickerIDs = studentInfo.get('Clicker ID', [])
-    if len(clickerIDs) == 0:
-        clickerIDtext = "Clicker ID: unknown"
-    elif len(clickerIDs) == 1:
-        clickerIDtext = f"Clicker ID: {clickerIDs[0]}"
-    else:
-        clickerIDtext = f"Clicker IDs: {str(clickerIDs)}"
     header_str = f"""
         <html>
         <h1>{outputConfigObj["report-name"]}</h1>
-        <h2>Student Name: {studentInfo['Roster Name']} <br/>
-        Student PID: {studentIdentifier} <br/>
-        {clickerIDtext}</h2>
-        <body>
         """
+    h2Str = mkInfoStr(studentInfo)
     disclaimer_str = f"<div>{outputConfigObj['disclaimer-text']}</div>"
     assignments_str = get_assignmenthtml(studentData, allAssignments, outputConfigObj)
-    total_str = f'{header_str} {disclaimer_str}\n{assignments_str}</body></html>'
+    total_str = f'{header_str} {h2Str} {disclaimer_str}\n{assignments_str}</body></html>'
     reportsDir = Path('reports')
     reportsDir.mkdir(exist_ok=True)
     reportPath = reportsDir / f'{studentIdentifier}.html'
     reportPath.write_text(total_str)
+
+def mkInfoStr(studentInfo):
+    res = "<h2>"
+    for (k,v) in studentInfo.items():
+        if type(v) == list:
+            if len(v) == 0:
+                v = "unknown"
+            elif len(v) == 1:
+                v = v[0]
+            else:
+                k = k + "s"
+        res += f"{k}: {v}<br/>\n"
+    res += "</h2><body>"
+    return res
 
 def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
     html_str = ""
