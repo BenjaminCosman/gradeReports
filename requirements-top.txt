@@ -1,0 +1,18 @@
+# Reading spreadsheets
+pyexcel
+# Plugin for pyexcel, required by autoconf (but not main? unclear why)
+pyexcel-xlsxr
+# Used instead of pyexcel in one place due to a bug in pyexcel
+openpyxl
+
+# Parsing timestamps
+python-dateutil
+
+# Progress bars
+tqdm
+
+# Turns html reoprts into pdfs
+pdfkit
+
+# Runs tests (really only required for developers)
+pytest
