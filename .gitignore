@@ -2,3 +2,4 @@ reports/
 .venv/
 tempConfig.json
 __pycache__/
+.vscode/

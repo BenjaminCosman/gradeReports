@@ -1,12 +1,30 @@
 import pdfkit
 from pathlib import Path
+import csv
 
 from lib.constants import INFO_KEY, GRADES_KEY
 
-__all__ = ['printReport']
+__all__ = ['printReport', 'makeCsvSummary']
+
+def makeCsvSummary(attrs, students, allAssignments, outputConfigObj):
+    fields = attrs + list(allAssignments.keys())
+    with open("reports/summary.csv", 'w') as csvFile:
+        csvWriter = csv.DictWriter(csvFile, fields)
+        csvWriter.writeheader()
+        for (studentIdentifier, studentData) in students:
+            newRow = {}
+            for attr in attrs:
+                if attr != "Student ID": #TODO fix this hack
+                    newRow[attr] = studentData[INFO_KEY].get(attr, '')
+                else:
+                    newRow[attr] = studentIdentifier
+            for (assignmentName, assignmentData) in allAssignments.items():
+                (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
+                newRow[assignmentName] = formatScore(score)
+            csvWriter.writerow(newRow)
 
 def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf):
-    '''This function is the only 'export' from this module.
+    '''This function is the main 'export' from this module.
     Given all relevant data about one student, it prints a text report
     to stdout and also dumps a html or pdf report to ./reports'''
     studentInfo = studentData[INFO_KEY]
@@ -34,7 +52,7 @@ def printTextReport(studentIdentifier, studentData, allAssignments, reportConfig
         for (assignmentName, assignmentData) in allAssignments.items():
             if assignmentData['type'] == obj["from"]:
                 (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
-                print(f"\t{assignmentName}\t{formatScore(score)}/{assignmentData['max_points']}{formatAnnot(annot)}")
+                print(f"\t{assignmentName}\t{formatScore(score)}{getMaxPointsStr(assignmentData)}{formatAnnot(annot)}")
     print('--------------------------\n')
 
 def writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf):
@@ -43,6 +61,7 @@ def writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfig
     header_str = f"""
         <html>
         <h1>{outputConfigObj["report-name"]}</h1>
+        <h2>PID: {studentIdentifier}</h2>
         """
     h2Str = mkInfoStr(studentInfo)
     disclaimer_str = f"<div>{outputConfigObj['disclaimer-text']}</div>"
@@ -76,7 +95,7 @@ def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
             if assignmentData['type'] == obj["from"]:
                 index += 1
                 (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
-                ogscore = f"{formatScore(score)}/{assignmentData['max_points']}"
+                ogscore = f"{formatScore(score)}{getMaxPointsStr(assignmentData)}"
                 prefix = f"<b>{assignmentName}:</b> "
                 html_str += f"{prefix} {ogscore}{formatAnnot(annot)} <br/>\n"
     return html_str
@@ -89,4 +108,12 @@ def formatAnnot(annot):
 
 def formatScore(score):
     '''Returns simplest fixed-point formatting, e.g. 3.10 -> 3.1, 3.00 -> 3'''
+    if type(score) == str:
+        return score
     return ('%f' % score).rstrip('0').rstrip('.')
+
+def getMaxPointsStr(data):
+    if 'max_points' in data:
+        return '/'+str(data['max_points'])
+    else:
+        return ''

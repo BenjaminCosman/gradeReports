@@ -23,5 +23,6 @@ filtersAndChecks = {
     'toUpper': lambda x: x.upper(),
     'NVto0': lambda x: 0 if x == 'NV' else x,
     'NoneTo0': lambda x: 0 if x == '' or x == 'None' else x,
-    'stripDenominator': lambda x: x.split('/')[0].strip()
+    'stripDenominator': lambda x: x.split('/')[0].strip(),
+    'toFloat': float
 }

@@ -184,7 +184,7 @@ def updateGradescopeConfig(allAttrs, sourceConf, rows, allNames):
     itemConfig = []
     for item in assignments:
         itemType = guessItemType(item)
-        maxPoints = int(rows[0][item + " - Max Points"])
+        maxPoints = float(rows[0][item + " - Max Points"])
         name = forceUniqueName(item, allNames)
         itemConfig.append({"name": name, "scoreCol": item, "max_points": maxPoints, "type": itemType, "filters": ALL_DEFAULT_FILTERS}) #["NoneTo0"]})
 

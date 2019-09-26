@@ -10,8 +10,16 @@ logging.addLevelName(logging.ERROR, "\033[31m%s\033[0m" % logging.getLevelName(l
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+class DuplicateFilter(logging.Filter):
+    msgs = set()
+    def filter(self, record):
+        retVal = record.msg not in self.msgs
+        self.msgs.add(record.msg)
+        return retVal
+logger.addFilter(DuplicateFilter())
+
 from lib.spreadsheetReader import getRows
-from lib.printing import printReport
+from lib.printing import printReport, makeCsvSummary
 from lib.constants import INFO_KEY, GRADES_KEY, ASSIGNMENTS_KEY, ALL_DEFAULT_FILTERS
 from lib.mung import IncorrectFormatException, checkAndClean
 from lib.config import loadConfig
@@ -44,7 +52,7 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
                 except:
                     logger.error(f"In file '{str(sourcePath)}', expected score column '{scoreCol}' for assignment '{assignment['name']}' not in record '{record}'")
                 try:
-                    score = float(checkAndClean(score, assignment.get('filters', ALL_DEFAULT_FILTERS)))
+                    score = checkAndClean(score, assignment.get('filters', ALL_DEFAULT_FILTERS))
                 except IncorrectFormatException:
                     logger.error(f"in file {sourcePath}, unreadable score for score column {scoreCol}: '{score}'")
             annotation = None
@@ -85,6 +93,11 @@ def getStudentID(studentAttrDict, primaryAttr, roster, studentInfo):
     raise UnidentifiableStudentException()
 
 def mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID):
+    try:
+        checkMerge(studentAttrDict, primaryAttr, roster, studentInfo, studentID)
+    except Exception as e:
+        logger.warning(e)
+        return
     if studentID not in roster[primaryAttr]:
         roster[primaryAttr][studentID] = {INFO_KEY: {}, GRADES_KEY: {}}
     oldInfo = roster[primaryAttr][studentID][INFO_KEY]
@@ -97,7 +110,7 @@ def mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID
                 oldInfo[key] = val
             else:
                 if oldInfo[key] != val:
-                    logger.error("overwriting singleton value")
+                    raise Exception("This state should be unreachable (see checkMerge)")
         else:
             if key not in oldInfo:
                 oldInfo[key] = set([val])
@@ -110,8 +123,31 @@ def mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID
             if val not in roster[key]:
                 roster[key][val] = studentID
             elif roster[key][val] != studentID:
-                logger.error(f"reassigning identifer {(key, val, roster[key][val], studentID)}")
-    return studentID
+                raise Exception("This state should be unreachable (see checkMerge)")
+
+def checkMerge(studentAttrDict, primaryAttr, roster, studentInfo, studentID):
+    if studentID not in roster[primaryAttr]:
+        oldInfo = {}
+    else:
+        oldInfo = roster[primaryAttr][studentID][INFO_KEY]
+    for (key, val) in studentInfo.items():
+        if key == primaryAttr:
+            continue
+        onePerStudent = studentAttrDict[key]["onePerStudent"]
+        if onePerStudent:
+            if key not in oldInfo:
+                pass
+            else:
+                if oldInfo[key] != val:
+                    raise Exception(f"refusing to overwrite singleton value for {key} from {oldInfo[key]} to {val}")
+        identifiesStudent = studentAttrDict[key]['identifiesStudent']
+        if identifiesStudent:
+            if key not in roster:
+                pass
+            elif val not in roster[key]:
+                pass
+            elif roster[key][val] != studentID:
+                raise Exception(f"refusing to reassign ({key}: {val}) from {roster[key][val]} to {studentID}")
 
 def gatherData(globalConfigObj):
     studentAttrDict = globalConfigObj["studentAttributes"]
@@ -141,8 +177,13 @@ def gatherData(globalConfigObj):
             mergeIntoRoster(studentAttrDict, primaryAttr, roster, studentInfo, studentID)
             for (k,v) in grades.items():
                 oldGrade = roster[primaryAttr][studentID][GRADES_KEY].get(k,(-float('inf'), None))
+                if oldGrade != (-float('inf'), None):
+                    logger.warning(f'Duplicate grade: {(oldGrade, studentInfo, grades)}')
                 # Always keep the highest grade for each assignment (TODO: replace with more flexible policy?)
-                roster[primaryAttr][studentID][GRADES_KEY][k] = max(oldGrade, v)
+                if type(v[0]) != str:
+                    roster[primaryAttr][studentID][GRADES_KEY][k] = max(oldGrade, v)
+                else:
+                    roster[primaryAttr][studentID][GRADES_KEY][k] = v
         if newDataMerged == False or len(failedToMerge) == 0:
             break
         data = failedToMerge[:]
@@ -175,6 +216,7 @@ if __name__ == "__main__":
     for (k,v) in globalConfigObj["studentAttributes"].items():
         if v.get("onlyPrintIfPresent", False):
             printFilters.append(k)
+    makeCsvSummary(list(globalConfigObj["studentAttributes"].keys()), students, allAssignments, globalConfigObj["outputs"])
     for (studentIdentifier, studentData) in students:
         if shouldPrint(printFilters, studentData[INFO_KEY]):
             printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"], args.pdf)
