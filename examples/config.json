@@ -100,7 +100,9 @@
     "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
     "content": [
       { "title": "Homework", "from": "homework" },
-      { "title": "In-class Participation", "from": "in-class-participation" },
+      { "title": "In-class Participation", "from": "in-class-participation",
+        "table": [["10/1", "10/3", "10/5"], ["10/8", "10/10", "10/12"]]
+      },
       { "title": "Review Quizzes", "from": "review-quiz" },
       { "title": "Discussion", "from": "discussion" },
       { "title": "Surveys", "from": "survey" }

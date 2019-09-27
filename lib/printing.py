@@ -92,14 +92,27 @@ def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
     html_str = ""
     for obj in outputConfigObj["content"]:
         html_str += f"<h2>{obj['title']}</h2>\n"
-        index = 0
-        for (assignmentName, assignmentData) in allAssignments.items():
-            if assignmentData['type'] == obj["from"]:
-                index += 1
-                (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
-                ogscore = f"{formatScore(score)}{getMaxPointsStr(assignmentData)}"
-                prefix = f"<b>{assignmentName}:</b> "
-                html_str += f"{prefix} {ogscore}{formatAnnot(annot)} <br/>\n"
+        if 'table' not in obj:
+            for (assignmentName, assignmentData) in allAssignments.items():
+                if assignmentData['type'] == obj["from"]:
+                    (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
+                    ogscore = f"{formatScore(score)}{getMaxPointsStr(assignmentData)}"
+                    prefix = f"<b>{assignmentName}:</b> "
+                    html_str += f"{prefix} {ogscore}{formatAnnot(annot)} <br/>\n"
+        else:
+            html_str += "<table border=1>\n"
+            for row in obj['table']:
+                html_str += "<tr>\n"
+                for assignmentName in row:
+                    html_str += "<td>"
+                    assignmentData = allAssignments[assignmentName]
+                    (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
+                    ogscore = f"{formatScore(score)}{getMaxPointsStr(assignmentData)}"
+                    prefix = f"<b>{assignmentName}:</b> "
+                    html_str += f"{prefix} {ogscore}{formatAnnot(annot)} <br/>"
+                    html_str += "</td>\n"
+                html_str += "</tr>\n"
+            html_str += "</table>\n"
     return html_str
 
 def formatAnnot(annot):
