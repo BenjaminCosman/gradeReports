@@ -8,7 +8,9 @@ __all__ = ['printReport', 'makeCsvSummary']
 
 def makeCsvSummary(attrs, students, allAssignments, outputConfigObj):
     fields = attrs + list(allAssignments.keys())
-    with open("reports/summary.csv", 'w') as csvFile:
+    reportsDir = Path('reports')
+    reportsDir.mkdir(exist_ok=True)
+    with open(reportsDir / "summary.csv", 'w') as csvFile:
         csvWriter = csv.DictWriter(csvFile, fields)
         csvWriter.writeheader()
         for (studentIdentifier, studentData) in students:

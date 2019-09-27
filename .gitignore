@@ -1,5 +1,14 @@
 reports/
-.venv/
-tempConfig.json
 __pycache__/
+
+# suggested name for the (optional) Python virtual environment
+.venv/
+
+# default output name for autoconf.py
+tempConfig.json
+
+# Visual Studio Code settings files
 .vscode/
+
+# pytest creates this
+.cache/
