@@ -204,6 +204,7 @@ if __name__ == "__main__":
     parser.add_argument('filename', metavar='CONFIG_FILE', type=str,
         help='The .json file describing your class.')
     parser.add_argument('-p', '--pdf', action='store_true', help='Generate pdf reports')
+    parser.add_argument('-w', '--wkhtmltopdf-path', help='Path to wkhtmltopdf executable')
     args = parser.parse_args()
     globalConfigObj = loadConfig(args.filename)
     (gradebook, allAssignments) = gatherData(globalConfigObj)
@@ -219,5 +220,5 @@ if __name__ == "__main__":
     makeCsvSummary(list(globalConfigObj["studentAttributes"].keys()), students, allAssignments, globalConfigObj["outputs"])
     for (studentIdentifier, studentData) in students:
         if shouldPrint(printFilters, studentData[INFO_KEY]):
-            printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"], args.pdf)
+            printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"], args.pdf, args.wkhtmltopdf_path)
     # logger.info("reports generated in folder 'reports/'")

@@ -25,7 +25,7 @@ def makeCsvSummary(attrs, students, allAssignments, outputConfigObj):
                 newRow[assignmentName] = formatScore(score)
             csvWriter.writerow(newRow)
 
-def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf):
+def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf, wkhtmltopdfPath):
     '''This function is the main 'export' from this module.
     Given all relevant data about one student, it prints a text report
     to stdout and also dumps a html or pdf report to ./reports'''
@@ -41,7 +41,18 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
 
     # Convert html report to pdf report
     if makePdf:
-        pdfkit.from_file(f'./reports/{studentIdentifier}.html', f'./reports/{studentIdentifier}.pdf')
+        try:
+            config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdfPath)
+            pdfkit.from_file(f'./reports/{studentIdentifier}.html', f'./reports/{studentIdentifier}.pdf', configuration=config)
+        except OSError as e:
+            msg = str(e)
+            if "No wkhtmltopdf executable found" not in msg:
+                raise e
+            print("Fatal error while generating pdf:")
+            print(f'\n<\n{msg}\n>\n')
+            print("If wkhtmltopdf is already installed and adding it to your path does not resolve this error,")
+            print("you can specify its path for this program using the -w option")
+            exit(1)
 
 def printTextReport(studentIdentifier, studentData, allAssignments, reportConfig):
     '''Print simple text report to stdout'''

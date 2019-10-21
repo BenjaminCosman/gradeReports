@@ -20,6 +20,8 @@ fashion, where it takes in an existing config file as well and adds to it.
 
 Requires Python. (possibly even Python 3.7.2+ ?)
 
+Requires [wkhtmltopdf](https://github.com/JazzCore/python-pdfkit/wiki/Installing-wkhtmltopdf) (if you want pdf reports instead of just html)
+
 ### Clone the repository
 
 `git clone https://github.com/BenjaminCosman/gradeReports.git`
