@@ -32,11 +32,8 @@ def getRowsNormalCSV(sourcePath):
     return pe.get_records(file_name=str(sourcePath), auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
 
 def getRowsRosterCSV(sourcePath):
-    contents = sourcePath.read_text()
-    idx = contents.index("Sec ID,PID,Student,Credits,College,Major,Level,Email\n")
-    contents = contents[idx:]
-    rows = pe.get_records(file_content=contents, file_type='csv', auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
-    return rows
+    allRows = pe.get_array(file_name=str(sourcePath), auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
+    return stripRoster(allRows)
 
 def getRowsNormalSingleSheetXLSX(sourcePath, sheetname):
     wb = openpyxl.load_workbook(filename=str(sourcePath), data_only=True)
@@ -50,7 +47,21 @@ def getRowsNormalSingleSheetXLSX(sourcePath, sheetname):
 
 def getRowsRosterSingleSheetXLSX(sourcePath, sheetname):
     allRows = pe.get_array(file_name=str(sourcePath), sheet_name=sheetname, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
-    idx = allRows.index(['Sec ID','PID','Student','Credits','College','Major','Level','Email'])
-    if idx == -1:
-        raise Exception("not a roster")
-    return pe.get_records(array=allRows[idx:], auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)
+    return stripRoster(allRows)
+
+def stripRoster(allRows):
+    '''A UCSD roster spreadsheet begins with a table linking section IDs to SecCodes
+    and instructors. We don't care about that, so skip over it.'''
+    # Skip the table
+    for (rowIdx, line) in enumerate(allRows):
+        if line[0] == '':
+            break
+    allRows = allRows[rowIdx:]
+    # Skip the blank line(s?) after the table
+    for (rowIdx, line) in enumerate(allRows):
+        if line[0] != '':
+            break
+    allRows = allRows[rowIdx:]
+    # TODO: crash gracefully if the input was not a roster
+
+    return pe.get_records(array=allRows, auto_detect_float=False, auto_detect_int=False, auto_detect_datetime=False)

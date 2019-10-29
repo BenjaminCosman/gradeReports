@@ -24,24 +24,50 @@ def loadConfig(filename):
     for sourceObj in configObj['sources']:
         if 'sheetName' not in sourceObj:
             sourceObj['sheetName'] = None
-        for assignment in sourceObj['assignments']:
+        for assignment in sourceObj[ASSIGNMENTS_KEY]:
             if 'filters' not in assignment:
                 assignment['filters'] = ALL_DEFAULT_FILTERS
 
     # Turn multi-sheet xlsx sources into multiple single-sheet ones
     newSources = []
     for sourceObj in configObj['sources']:
-        if Path(sourceObj['file']).suffix != '.xlsx' or sourceObj['sheetName'] != None:
-            newSources.append(sourceObj)
+        if Path(sourceObj['file']).suffix == '.xlsx' and sourceObj['sheetName'] == None:
+            # Found a multi-sheet xlsx source (or a single sheet source that did not
+            # specify the sheet name)
+
+            assignments = sourceObj[ASSIGNMENTS_KEY]
+
+            # Case 1: No assignment specifies a sheet name. (This case includes if
+            # there are no assignments)
+            # Duplicate source once for each sheet in document.
+            if all('sheetName' not in item for item in assignments):
+                book = pe.get_book(file_name=sourceObj['file'])
+                for sheetName in book.sheet_names():
+                    newSource = copy.deepcopy(sourceObj)
+                    newSource['sheetName'] = sheetName
+                    newSources.append(newSource)
+
+            # Case 2: There are assignments and each specifies a sheet name.
+            # Duplicate source once for each named sheet and partition
+            # assignments by sheet name
+            elif all('sheetName' in item for item in assignments):
+                usedSheets = [item['sheetName'] for item in assignments]
+                for sheetName in usedSheets:
+                    newSource = copy.deepcopy(sourceObj)
+                    newSource['sheetName'] = sheetName
+                    newSource[ASSIGNMENTS_KEY] = list(filter(lambda x: x['sheetName'] == sheetName, newSource[ASSIGNMENTS_KEY]))
+                    for item in newSource[ASSIGNMENTS_KEY]:
+                        item.pop('sheetName')
+                    newSources.append(newSource)
+
+            # Case 3: At least one assignment specifies a sheet name and at least
+            # one does not. This is not allowed
+            else:
+                raise Exception(f"In source {sourceObj['file']}, either all or none of the assignments must specify a sheet name.")
         else:
-            usedSheets = [item['sheetName'] for item in sourceObj[ASSIGNMENTS_KEY]]
-            for sheetName in usedSheets:
-                newSource = copy.deepcopy(sourceObj)
-                newSource['sheetName'] = sheetName
-                newSource[ASSIGNMENTS_KEY] = list(filter(lambda x: x['sheetName'] == sheetName, newSource[ASSIGNMENTS_KEY]))
-                for item in newSource[ASSIGNMENTS_KEY]:
-                    item.pop('sheetName')
-                newSources.append(newSource)
+            # Single-sheet source; no editing needed
+            newSources.append(sourceObj)
+
     configObj['sources'] = newSources
 
     return configObj
