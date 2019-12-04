@@ -20,7 +20,7 @@ logger.addFilter(DuplicateFilter())
 
 from lib.spreadsheetReader import getRows
 from lib.printing import printReport, makeCsvSummary
-from lib.constants import INFO_KEY, GRADES_KEY, ASSIGNMENTS_KEY, ALL_DEFAULT_FILTERS
+from lib.constants import INFO_KEY, GRADES_KEY, ASSIGNMENTS_KEY, ALL_DEFAULT_FILTERS, GRADE_NOT_PRESENT_ANNOTS
 from lib.mung import IncorrectFormatException, checkAndClean
 from lib.config import loadConfig
 
@@ -200,6 +200,26 @@ def shouldPrint(printFilters, studentInfo):
             return False
     return True
 
+#NOTE: we assume all assignments in a category are weighted equally by percentage,
+#i.e. getting a 10/20 and a 1/2 contribute the same in all aggregations #TODO: offer alternatives?
+def postprocess(actions, students, allAssignments):
+    for action in actions:
+        if action['action'] != "dropLowest":
+            raise Exception("Unknown action in 'processing' field (only dropLowest is supported)")
+        category = action['type']
+        dropCount = action.get('dropCount', 1)
+        for student in students:
+            studentData = student[1]
+            grades = []
+            for (assignmentName, assignmentData) in allAssignments.items():
+                if assignmentData['type'] == category:
+                    (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, GRADE_NOT_PRESENT_ANNOTS))
+                    grades.append((score/assignmentData['max_points'], annot))
+            grades.sort()
+            for grade in grades[:dropCount]:
+                annot = grade[1]
+                annot['dropped'] = True
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', metavar='CONFIG_FILE', type=str,
@@ -218,6 +238,7 @@ if __name__ == "__main__":
     for (k,v) in globalConfigObj["studentAttributes"].items():
         if v.get("onlyPrintIfPresent", False):
             printFilters.append(k)
+    postprocess(globalConfigObj['processing'], students, allAssignments)
     makeCsvSummary(list(globalConfigObj["studentAttributes"].keys()), students, allAssignments, globalConfigObj["outputs"]) #TODO drop lowest?
     for (studentIdentifier, studentData) in students:
         if shouldPrint(printFilters, studentData[INFO_KEY]):

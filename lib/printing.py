@@ -6,6 +6,7 @@ from lib.constants import INFO_KEY, GRADES_KEY, GRADE_NOT_PRESENT_ANNOTS
 
 __all__ = ['printReport', 'makeCsvSummary']
 
+#TODO: dropLowest
 def makeCsvSummary(attrs, students, allAssignments, outputConfigObj):
     fields = attrs + list(allAssignments.keys())
     reportsDir = Path('reports')
@@ -100,7 +101,6 @@ def mkInfoStr(studentInfo):
     res += "</h2><body>"
     return res
 
-#TODO: dropLowest
 def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
     html_str = ""
     for obj in outputConfigObj["content"]:
@@ -125,7 +125,10 @@ def stringForAssignment(assignmentData, assignmentName, studentData, suffix):
     (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, GRADE_NOT_PRESENT_ANNOTS))
     ogscore = f"{formatScore(score)}{getMaxPointsStr(assignmentData)}"
     prefix = f"<b>{assignmentName}:</b> "
-    return f"{prefix} {ogscore}{formatAnnot(annot)}{suffix}"
+    s = f"{prefix} {ogscore}{formatAnnot(annot)}"
+    if annot.get('dropped', False):
+        s = f'<i><font color="grey">{s}</font></i>'
+    return f"{s}{suffix}"
 
 def formatAnnot(annotations):
     #TODO: use longAnnot instead depending on flags

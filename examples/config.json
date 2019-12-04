@@ -95,11 +95,15 @@
       ]
     }
   ],
+  "processing": [
+    {"action": "dropLowest", "type": "homework"},
+    {"action": "dropLowest", "type": "discussion", "dropCount": 2}
+  ],
   "outputs": {
     "report-name": "CSE777 Preliminary Grade Report",
-    "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
+    "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...<br><br>The lowest HW and lowest two Discussion scores will be dropped; these are <i><font color=\"grey\">greyed out and in italics</font></i> on this report.",
     "content": [
-      { "title": "Homework", "from": "homework", "dropLowest": 1 },
+      { "title": "Homework", "from": "homework" },
       { "title": "In-class Participation", "from": "in-class-participation",
         "table": [["10/1", "10/3", "10/5"], ["10/8", "10/10", "10/12"]]
       },
