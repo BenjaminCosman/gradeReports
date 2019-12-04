@@ -55,7 +55,7 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
                     score = checkAndClean(score, assignment.get('filters', ALL_DEFAULT_FILTERS))
                 except IncorrectFormatException:
                     logger.error(f"in file {sourcePath}, unreadable score for score column {scoreCol}: '{score}'")
-            annotation = None
+            annotations = {}
             if "due_date" in assignment:
                 dueDatetime = dateutil.parser.parse(assignment['due_date'])
                 turnedInStr = record[assignment['timestampCol']]
@@ -68,8 +68,9 @@ def sourceToGrades(sourceConfigObj, studentAttrDict):
                     turninDatetime = datetime.datetime.utcfromtimestamp(utcTime)
                 if turninDatetime > dueDatetime:
                     score = 0
-                    annotation = f'late - received {turninDatetime.strftime("%b %d, %T")}'
-            grades[assignment['name']] = (score, annotation)
+                    annotations['shortAnnot'] = f'late - received {turninDatetime.strftime("%b %d, %T")}'
+                    annotations['longAnnot'] = f'due {dueDatetime.strftime("%b %d, %T")}; received {turninDatetime.strftime("%b %d, %T")}'
+            grades[assignment['name']] = (score, annotations)
         outputList.append((studentInfo, grades))
     return outputList
 
@@ -217,7 +218,7 @@ if __name__ == "__main__":
     for (k,v) in globalConfigObj["studentAttributes"].items():
         if v.get("onlyPrintIfPresent", False):
             printFilters.append(k)
-    makeCsvSummary(list(globalConfigObj["studentAttributes"].keys()), students, allAssignments, globalConfigObj["outputs"])
+    makeCsvSummary(list(globalConfigObj["studentAttributes"].keys()), students, allAssignments, globalConfigObj["outputs"]) #TODO drop lowest?
     for (studentIdentifier, studentData) in students:
         if shouldPrint(printFilters, studentData[INFO_KEY]):
             printReport(studentIdentifier, studentData, allAssignments, globalConfigObj["outputs"], args.pdf, args.wkhtmltopdf_path)

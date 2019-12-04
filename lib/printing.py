@@ -2,7 +2,7 @@ import pdfkit
 from pathlib import Path
 import csv
 
-from lib.constants import INFO_KEY, GRADES_KEY
+from lib.constants import INFO_KEY, GRADES_KEY, GRADE_NOT_PRESENT_ANNOTS
 
 __all__ = ['printReport', 'makeCsvSummary']
 
@@ -21,7 +21,7 @@ def makeCsvSummary(attrs, students, allAssignments, outputConfigObj):
                 else:
                     newRow[attr] = studentIdentifier
             for (assignmentName, assignmentData) in allAssignments.items():
-                (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
+                (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, GRADE_NOT_PRESENT_ANNOTS))
                 newRow[assignmentName] = formatScore(score)
             csvWriter.writerow(newRow)
 
@@ -37,7 +37,7 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
             studentInfo[k] = sorted(list(v))
 
     printTextReport(studentIdentifier, studentData, allAssignments, outputConfigObj["content"])
-    writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf)
+    writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfigObj)
 
     # Convert html report to pdf report
     if makePdf:
@@ -54,6 +54,7 @@ def printReport(studentIdentifier, studentData, allAssignments, outputConfigObj,
             print("you can specify its path for this program using the -w option")
             exit(1)
 
+#TODO: dropLowest
 def printTextReport(studentIdentifier, studentData, allAssignments, reportConfig):
     '''Print simple text report to stdout'''
     print('\n--------------------------')
@@ -64,12 +65,12 @@ def printTextReport(studentIdentifier, studentData, allAssignments, reportConfig
         print(obj["title"])
         for (assignmentName, assignmentData) in allAssignments.items():
             if assignmentData['type'] == obj["from"]:
-                (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
+                (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, GRADE_NOT_PRESENT_ANNOTS))
                 print(f"\t{assignmentName}\t{formatScore(score)}{getMaxPointsStr(assignmentData)}{formatAnnot(annot)}")
     print('--------------------------\n')
 
-def writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfigObj, makePdf):
-    # Print html report to file
+def writeHtmlReport(studentIdentifier, studentData, allAssignments, outputConfigObj):
+    '''Write html report file'''
     studentInfo = studentData[INFO_KEY]
     header_str = f"""
         <html>
@@ -99,6 +100,7 @@ def mkInfoStr(studentInfo):
     res += "</h2><body>"
     return res
 
+#TODO: dropLowest
 def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
     html_str = ""
     for obj in outputConfigObj["content"]:
@@ -120,12 +122,14 @@ def get_assignmenthtml(studentData, allAssignments, outputConfigObj):
     return html_str
 
 def stringForAssignment(assignmentData, assignmentName, studentData, suffix):
-    (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, None))
+    (score, annot) = studentData[GRADES_KEY].get(assignmentName, (0, GRADE_NOT_PRESENT_ANNOTS))
     ogscore = f"{formatScore(score)}{getMaxPointsStr(assignmentData)}"
     prefix = f"<b>{assignmentName}:</b> "
     return f"{prefix} {ogscore}{formatAnnot(annot)}{suffix}"
 
-def formatAnnot(annot):
+def formatAnnot(annotations):
+    #TODO: use longAnnot instead depending on flags
+    annot = annotations.get('shortAnnot', None)
     if annot == None:
         return ''
     else:

@@ -99,7 +99,7 @@
     "report-name": "CSE777 Preliminary Grade Report",
     "disclaimer-text": "These are all the scores recorded for you in this course. If there are any discrepancies between the scores you see here and your own records, email...",
     "content": [
-      { "title": "Homework", "from": "homework" },
+      { "title": "Homework", "from": "homework", "dropLowest": 1 },
       { "title": "In-class Participation", "from": "in-class-participation",
         "table": [["10/1", "10/3", "10/5"], ["10/8", "10/10", "10/12"]]
       },
