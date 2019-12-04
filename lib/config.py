@@ -27,6 +27,8 @@ def loadConfig(filename):
         for assignment in sourceObj[ASSIGNMENTS_KEY]:
             if 'filters' not in assignment:
                 assignment['filters'] = ALL_DEFAULT_FILTERS
+    if 'processing' not in configObj:
+        configObj['processing'] = []
 
     # Turn multi-sheet xlsx sources into multiple single-sheet ones
     newSources = []
