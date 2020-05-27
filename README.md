@@ -35,7 +35,8 @@ Requires [wkhtmltopdf](https://github.com/JazzCore/python-pdfkit/wiki/Installing
 If you do this, make sure to activate that environment for the rest of
 installation as well as whenever you run the scripts:
 
-`source .venv/bin/activate` (This may vary depending on your shell)
+`source .venv/bin/activate` (Unix zsh/bash)
+`.venv\Scripts\activate` (Windows PowerShell)
 
 ### Install all required python packages
 
@@ -200,3 +201,4 @@ need the "stripDenominator" filter; if you download it as an xlsx then the
 formatting remains visible to you but hidden from the code, so you will not
 need that filter and also autoconf may do a worse job of guessing the intended
 max score.
+- On Windows it seems to have a hard time finding the wkhtmltopdf binary, even if it is on your PATH. You can get around this for now by specifying the path manually using the -w flag, e.g. `python3 main.py examples/config.json --pdf -w "C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"`
