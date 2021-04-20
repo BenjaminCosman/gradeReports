@@ -10,7 +10,7 @@ openpyxl==3.0.0
 packaging==19.2
 pdfkit==0.6.1
 pluggy==0.13.0
-py==1.8.0
+py==1.10.0
 pyexcel==0.5.15
 pyexcel-io==0.5.20
 pyexcel-xlsxr==0.5.2
