@@ -4,7 +4,7 @@ et-xmlfile==1.0.1
 importlib-metadata==0.23
 jdcal==1.4.1
 lml==0.0.9
-lxml==4.4.1
+lxml==4.9.1
 more-itertools==7.2.0
 openpyxl==3.0.0
 packaging==19.2
